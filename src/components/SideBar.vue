@@ -21,9 +21,11 @@ export default {
       id: null,
     };
   },
-  mounted() {
-    this.id = LocalStorage.id;
+  beforeUpdate() {
+    this.id = LocalStorage.id();
+    console.log(LocalStorage.id());
   },
 };
+console.log(LocalStorage.id());
 </script>
 <style scooped></style>

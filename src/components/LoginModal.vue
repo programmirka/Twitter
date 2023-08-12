@@ -60,7 +60,6 @@ export default {
       alert("Sign in successful!");
       this.$emit("close");
       this.$router.push("/"); //kad se uloguje ide na svoj home page
-      console.log("MIRA");
 
       LocalStorage.setUser(res.data.user);
       this.$emit("loggedIn", LocalStorage.getUser());
@@ -80,7 +79,6 @@ export default {
         axios
           .post("http://localhost:3000/api/login", this.user)
           .then((res) => {
-            console.log("res: ", res);
             this.loginRequestSuccess(res);
           })
           .catch((error) => {
@@ -100,14 +98,12 @@ export default {
   },
   watch: {
     "user.username"(newVal, oldVal) {
-      console.log(`Count changed from ${oldVal} to ${newVal}`);
       if (newVal) {
         Validation.email(newVal);
         this.errors.email = Validation.email(newVal);
       }
     },
     "user.password"(newVal, oldVal) {
-      console.log(`Count changed from ${oldVal} to ${newVal}`);
       if (newVal) {
         this.errors.password = Validation.password(newVal);
       }
@@ -120,23 +116,25 @@ export default {
   padding: 0px;
 }
 .modal {
-  position: fixed;
-  top: 40px;
-  left: 0;
+  position: absolute;
+  z-index: 3000;
+  top: 0px;
+  left: 0px;
   width: 100%;
-  height: 100%;
+  /* height: 100%; */
   background-color: rgba(0, 0, 0, 0.5);
   display: flex;
   justify-content: center;
   align-items: center;
   flex-direction: column;
+  padding: 50px 0px 110%;
 }
 .register {
   width: 800px;
   height: 800px;
   background-color: aliceblue;
   padding: 8px 70px;
-  margin-top: 0px;
+  margin-top: 50px;
   position: relative;
 }
 .registerTitle {

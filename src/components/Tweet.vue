@@ -5,10 +5,9 @@
     </div>
     <div class="tweetContent">
       <p>
-        <RouterLink
-          v-if="usr_id"
-          :to="{ name: 'profile-details', params: { id: usr_id } }"
-          >{{ name }} | <span>@{{ handle }}</span> |</RouterLink
+        <!-- ne znam zasto ali imala sam v-if="usr_id" -->
+        <RouterLink :to="{ name: 'profile-details', params: { id: usr_id } }"
+          >{{ usr_name }} | <span>@{{ handle }}</span> |</RouterLink
         >
         <span>{{ time }}</span>
       </p>
@@ -17,13 +16,15 @@
       >
       <div class="engagement">
         <div>
-          <button>
-            {{ comments }} <font-awesome-icon icon="fa-regular fa-comment" />
-          </button>
+          <RouterLink :to="{ name: 'tweet-details', params: { id: id } }">
+            <button>
+              {{ comments }} <font-awesome-icon icon="fa-regular fa-comment" />
+            </button>
+          </RouterLink>
         </div>
         <div>
-          <button>
-            {{ likes }} <font-awesome-icon icon="fa-regular fa-thumbs-up" />
+          <button @click="like">
+            {{ likeBtn }} <font-awesome-icon icon="fa-regular fa-thumbs-up" />
           </button>
         </div>
       </div>
@@ -32,20 +33,46 @@
 </template>
 <script>
 import CreatedService from "@/services/CreatedService.js";
+import LikeServices from "@/services/LikeServices.js";
+
 export default {
   props: {
-    name: String,
+    usr_name: String,
     handle: String,
     content: String,
-    id: Number,
+    id: Number, //tweet id
     comments: Number,
     likes: Number,
     created: String,
     usr_id: String,
   },
+  data() {
+    return {
+      likeObj: {
+        twt_id: this.id,
+        usr_id: this.usr_id,
+      },
+      likeBtn: this.likes,
+    };
+  },
   computed: {
     time() {
       return CreatedService.timeAgo(this.created);
+    },
+  },
+  methods: {
+    like() {
+      LikeServices.like(this.likeObj)
+        .then((res) => {
+          if (res.data.data === "like") {
+            this.likeBtn++;
+          } else {
+            this.likeBtn--;
+          }
+        })
+        .catch((err) => {
+          console.error(err);
+        });
     },
   },
 };

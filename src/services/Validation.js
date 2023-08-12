@@ -8,7 +8,8 @@ function email(email) {
   }
 }
 function password(password) {
-  const re = /^(?=.*[A-Za-z])(?=.*\d)(?=.*[@$!%*#?&])[A-Za-z\d@$!%*#?&]{8,30}$/;
+  let re = /^(?=.*[A-Za-z])(?=.*\d)(?=.*[@$!%*#?&.])[A-Za-z\d@$!%*#?&.]{8,30}$/;
+
   //Minimum eight characters, maximum 30 characters, at least one letter, one number and one special character:
   if (re.test(password)) {
     return "";
@@ -17,12 +18,12 @@ function password(password) {
   }
 }
 function name(name) {
-  const re = /^[a-zA-Z-' ]+$/;
-  //only contains letters, spaces, hyphens, and apostrophes,
+  const re = /^[a-zA-Z0-9-' ]+$/;
+  //only contains letters, numbers, spaces, hyphens, and apostrophes,
   if (re.test(name) && name.length > 3 && name.length < 30) {
     return "";
   } else {
-    return "Name should only contain letters, spaces, hyphens, and apostrophes";
+    return "Name should only contain letters, numbers, spaces, hyphens, and apostrophes";
   }
 }
 function handle(handle) {
@@ -32,6 +33,16 @@ function handle(handle) {
     return "";
   } else {
     return "Handle can contain only letters, numbers, spaces, hyphens, and apostrophes and must be between 8-30 characters";
+  }
+}
+function about(about) {
+  const re = /^[a-zA-Z0-9'.,:;!@#$%^&*()_+={}[\]|<>/~\\-]+$/;
+
+  //only contains letters, numbers, spaces, hyphens, and apostrophes,
+  if (re.test(about) && about.length < 300) {
+    return "";
+  } else {
+    return "About can contain only letters, numbers, spaces, hyphens, and apostrophes and must be below 300 characters";
   }
 }
 function rePassword(password, rePassword) {
@@ -47,4 +58,5 @@ export default {
   name,
   handle,
   rePassword,
+  about,
 };

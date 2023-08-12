@@ -1,5 +1,5 @@
 <template>
-  <div class="modal" v-show="registerModalVisibility">
+  <div class="modal" v-if="registerModalVisibility">
     <div class="register">
       <div class="registerTitle">
         <button @click="closeModal">X</button>
@@ -70,6 +70,7 @@
 <script>
 import axios from "axios";
 import Validation from "@/services/Validation.js";
+
 export default {
   props: {
     registerModalVisibility: Boolean,
@@ -157,13 +158,13 @@ export default {
           registerRequestError(error);
         });
     },
-  },
-  // axios.post("http://localhost:3000/test");
-  closeModal() {
-    this.$emit("close");
-  },
-  openLoginModal() {
-    this.$emit("openSignInModal");
+    // axios.post("http://localhost:3000/test");
+    closeModal() {
+      this.$emit("close");
+    },
+    openLoginModal() {
+      this.$emit("openSignInModal");
+    },
   },
   watch: {
     "user.name"(newVal, oldVal) {
@@ -208,23 +209,25 @@ export default {
   padding: 0px;
 }
 .modal {
-  position: fixed;
-  top: 40px;
-  left: 0;
+  position: absolute;
+  z-index: 3000;
+  top: 0px;
+  left: 0px;
   width: 100%;
-  height: 100%;
+  /* height: 100%; */
   background-color: rgba(0, 0, 0, 0.5);
   display: flex;
   justify-content: center;
   align-items: center;
   flex-direction: column;
+  padding: 50px 0px 110%;
 }
 .register {
   width: 800px;
   height: 800px;
   background-color: aliceblue;
   padding: 8px 70px;
-  margin-top: 0px;
+  margin-top: 50px;
   position: relative;
 }
 .registerTitle {

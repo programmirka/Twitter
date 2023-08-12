@@ -15,7 +15,6 @@ export default {
     },
   },
 };
-
 /* <BaseCheckbox
 v-model="event.extras.catering"
 label="Catering"

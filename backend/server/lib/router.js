@@ -2,12 +2,11 @@ const express = require("express");
 const User = require("../models/user");
 const passport = require("passport");
 const DB = require("./db");
+const bcrypt = require("bcrypt");
 
 let _ = express.Router();
 
 const requireAuth = (req, res, next) => {
-  console.log("headers:", req.headers);
-
   if (req.isAuthenticated()) {
     next();
   } else {
@@ -141,15 +140,15 @@ _.post("/login", (req, res, next) => {
 
 _.get("/profile/:id", requireAuth, async (req, res) => {
   try {
-    var id = req.params.id;
     // console.group('\n GET /user -request details:');
     //     // console.log('---------------------- \n')
+    // console.log("req.user", req.user);
     //     // console.log('req.body', req.body)
     //     // console.log('req.params', req.params)
     //     // console.log('req.headers', req.headers)
     //     console.log('req.isAuthenticated', req.isAuthenticated())
-    console.log("req.user", req.user);
-    // console.groupEnd();
+    var id = req.params.id;
+
     const user = await DB.findUserById(req.user.id);
 
     if (!user)
@@ -160,6 +159,7 @@ _.get("/profile/:id", requireAuth, async (req, res) => {
       });
 
     // if (req.user.id === id)
+    //TODO: check in DB.js or user.js if there are some functions for that, just add missing data
     DB.conn.query(
       `SELECT 
       user.usr_id, 
@@ -167,6 +167,9 @@ _.get("/profile/:id", requireAuth, async (req, res) => {
       usr_handle, 
       usr_about, 
       usr_joined, 
+      usr_birth, 
+      usr_email,
+      usr_pass,
       (SELECT COUNT(DISTINCT flw_follower) FROM follower WHERE flw_followee = user.usr_id) AS followers,
       (SELECT COUNT(DISTINCT flw_followee) FROM follower WHERE flw_follower = user.usr_id) AS following 
       FROM twitter_baza.user
@@ -187,11 +190,256 @@ _.get("/profile/:id", requireAuth, async (req, res) => {
   }
 });
 
+///
+_.put("/profile/:id", requireAuth, async (req, res) => {
+  try {
+    const id = req.params.id;
+    console.log("Body requesta", req.body);
+    const userFront = req.body;
+    var name = userFront.name;
+    var handle = userFront.handle;
+    var about = userFront.about;
+    var birthday = userFront.birthday;
+    console.log("Birthday Front", birthday);
+    var password = userFront.password;
+    var rePassword = userFront.rePassword;
+
+    // const userDB = await DB.findUserById(req.user.id);
+
+    let userOld = await DB.findUserById(id);
+
+    let userNew = new User();
+
+    //proveravamo validaciju svih podataka i da li se razlikuje od onog u bazi
+
+    // if (!userDB)
+    //   return res.status(404).json({
+    //     timestamp: Date.now(),
+    //     msg: "User not found",
+    //     code: 404,
+    //   });
+
+    let msg = false; //msg se javlja samo ako imamo neku gresku
+    //ako ime iz reqesta nije isto kao sadasnje ime iz DB
+    //nastvaljamo validaciju i ako prodje validaciju userNew za update dobija name
+
+    //TODO: napravi u db.js query za update user-a
+
+    if (userOld.usr_name !== name) {
+      msg = userNew.setName(name);
+      if (msg) {
+        return res.status(400).json({
+          error: {
+            code: 400,
+            type: "first name",
+            message: msg,
+          },
+        });
+      }
+      await userNew.updateName(id);
+    }
+    if (password.length > 0) {
+      if (password === rePassword) {
+        var userNewPassHashed = await bcrypt.hash(password, 10);
+
+        if (userOld.usr_pass !== userNewPassHashed) {
+          msg = await userNew.setPassword(password);
+          if (msg)
+            return res.status(400).json({
+              error: {
+                code: 400,
+                type: "password",
+                message: msg,
+              },
+            });
+          await userNew.updatePassword(id);
+        }
+      }
+    }
+
+    if (userOld.usr_about !== about) {
+      console.log("User old about", userOld.usr_about);
+      msg = userNew.setAbout(about);
+      if (msg) {
+        return res.status(400).json({
+          error: {
+            code: 400,
+            type: "about",
+            message: msg,
+          },
+        });
+      }
+      await userNew.updateAbout(id);
+    }
+
+    if (userOld.usr_handle !== handle) {
+      msg = userNew.setHandle(handle);
+      if (msg) {
+        return res.status(400).json({
+          error: {
+            code: 400,
+            type: "handle",
+            message: msg,
+          },
+        });
+      }
+      await userNew.updateHandle(id);
+    }
+
+    function month(dateString) {
+      const date = new Date(dateString);
+      const month = date.getMonth() + 1;
+      return month;
+    }
+    function year(dateString) {
+      const date = new Date(dateString);
+      const year = date.getFullYear();
+      return year;
+    }
+    function day(dateString) {
+      const date = new Date(dateString);
+      const day = date.getDate();
+      return day;
+    }
+
+    var Month = month(userOld.usr_birth);
+    var Year = year(userOld.usr_birth);
+    var Day = day(userOld.usr_birth);
+
+    let userOldBirthday = Year + "-" + Month + "-" + Day;
+
+    if (userOldBirthday !== birthday) {
+      console.log("User old birth", userOldBirthday);
+      console.log("User new Birth", birthday);
+      userNew.setBirth(birthday);
+      await userNew.updateBirthday(id);
+    }
+
+    res.status(200).json({
+      message: "Successfully updated!",
+    });
+  } catch (err) {
+    console.error(new Error(err.message));
+    res.status(500).json({
+      timestamp: Date.now(),
+      msg: "Failed to get user, internal server error",
+      code: 500,
+    });
+  }
+});
+
+_.post("/follow", requireAuth, async (req, res) => {
+  try {
+    const { follower_id, followee_id } = req.body;
+    console.log("Follower and followee ids", follower_id, followee_id);
+
+    //provera da li se ti useri vec prate pa onda, ako se prate ide unfollow
+    if (await DB.findFollowers(follower_id, followee_id)) {
+      await DB.unfollow(follower_id, followee_id);
+      console.log("Unfollow");
+      res.status(200).json({
+        message: "Successfull unfollow",
+        data: "unfollow",
+      });
+    } else {
+      await DB.follow(follower_id, followee_id);
+      console.log("Follow");
+      res.status(200).json({
+        message: "Successfull follow",
+        data: "follow",
+      });
+    }
+
+    // res.status(200).json({
+    //   message: "Successfull follow/unfollow",
+    // });
+  } catch (err) {
+    console.error(new Error(err.message));
+  }
+});
+_.get("/follow", requireAuth, async (req, res) => {
+  try {
+    var id = req.user.id;
+
+    DB.conn.query(
+      `SELECT usr_id, usr_name, usr_handle, COUNT(follower.flw_follower) AS followers_number 
+      FROM twitter_baza.user
+      LEFT JOIN follower ON (user.usr_id = follower.flw_followee)
+      WHERE usr_id != ? 
+      GROUP BY user.usr_id
+      ORDER BY followers_number DESC`,
+      [id],
+      async function (err, results, fields) {
+        if (err) throw err;
+        let newArray = [];
+        for (var i = 0; i < results.length; i++) {
+          if (!(await DB.findFollowers(req.user.id, results[i].usr_id))) {
+            newArray.push(results[i]);
+          }
+        }
+        newArray = newArray.slice(0, 3);
+        res.json({ data: newArray });
+      }
+    );
+  } catch (err) {
+    console.error(new Error(err.message));
+  }
+});
+
+//check if followers(because of the follow / unfollow btn on the profile)
+_.put("/follow", requireAuth, async (req, res) => {
+  try {
+    const { follower_id, followee_id } = req.body;
+    console.log(
+      "GET Follow: Follower and followee ids",
+      follower_id,
+      followee_id
+    );
+
+    let result = null;
+
+    if (await DB.findFollowers(follower_id, followee_id)) {
+      res.status(200).json({
+        data: "followers",
+      });
+    } else {
+      res.status(200).json({
+        data: "notFollowers",
+      });
+    }
+  } catch (err) {
+    console.error(new Error(err.message));
+  }
+});
+
+_.post("/like", requireAuth, async (req, res) => {
+  try {
+    const { twt_id, usr_id } = req.body;
+    if (await DB.checkTweetLikes(twt_id, usr_id)) {
+      await DB.removeTweetLikes(twt_id, usr_id);
+      res.status(200).json({
+        message: "Like has been removed from tweet",
+        data: "dislike",
+      });
+    } else {
+      await DB.addTweetLikes(twt_id, usr_id);
+      res.status(200).json({
+        message: "Like has been added to the tweet",
+        data: "like",
+      });
+    }
+  } catch (err) {
+    console.error(new Error(err.message));
+  }
+});
+
 //POST /logout
 
 _.post("/logout", async (req, res, next) => {
+  console.log("LOGOUT");
   try {
     req.session = null;
+
     res.redirect("/");
   } catch (e) {
     throw new Error(e);

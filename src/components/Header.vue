@@ -14,8 +14,8 @@
     </div>
   </header>
   <RegisterModal
-    @close="registerModalVisibility = false"
-    :registerModalVisibility="registerModalVisibility"
+    @close="registerModVis = false"
+    :registerModalVisibility="registerModVis"
     @openLoginModal="openLogin"
   ></RegisterModal>
 
@@ -31,6 +31,8 @@ import RegisterModal from "./RegisterModal.vue";
 import LoginModal from "./LoginModal.vue";
 import CornerProfile from "./CornerProfile.vue";
 import LocalStorage from "../services/LocalStorage";
+import axios from "axios";
+
 export default {
   emits: ["loggedUserNavTrue", "loggedUserNavFalse"],
   components: {
@@ -43,7 +45,7 @@ export default {
       loggedUser: false,
       storedUser: Object, //koristim za ostale funkcionalnosti, npm storedUser.usr_id
       loginModalVisibility: false,
-      registerModalVisibility: false,
+      registerModVis: false,
       name: "",
       handle: "",
     };
@@ -51,12 +53,12 @@ export default {
   methods: {
     openRegister() {
       this.loginModalVisibility = false;
-      this.registerModalVisibility = true;
+      this.registerModVis = true;
     },
 
     openLogin() {
       this.loginModalVisibility = true;
-      this.registerModalVisibility = false;
+      this.registerModVis = false;
     },
 
     loggedInHandler(storedUser) {
@@ -64,7 +66,6 @@ export default {
         this.loggedUser = true;
         this.storedUser = storedUser;
 
-        console.log(this.storedUser);
         this.name = this.storedUser.usr_name;
         this.handle = this.storedUser.usr_handle;
 
@@ -74,13 +75,20 @@ export default {
       }
     },
     loggedOutHandler() {
-      this.loggedUser = false;
-      this.storedUser = null;
-      LocalStorage.removeUser();
-      this.name = "";
-      this.handle = "";
-      this.$emit("loggedUserNavFalse");
-      this.$router.push("/explore");
+      axios
+        .post("http://localhost:3000/api/logout")
+        .then((res) => {
+          this.loggedUser = false;
+          this.storedUser = null;
+          LocalStorage.removeUser();
+          this.name = "";
+          this.handle = "";
+          this.$emit("loggedUserNavFalse");
+          this.$router.push("/explore");
+        })
+        .catch((err) => {
+          console.error(err);
+        });
     },
   },
   mounted() {
@@ -100,12 +108,7 @@ export default {
 * {
   box-sizing: border-box;
 }
-body {
-  font-family: "Montserrat", sans-serif;
-  line-height: 1.6;
-  margin: 0;
-  min-height: 100vh;
-}
+
 .button {
   background-color: #b6bdc4;
   padding: 0px 15px;

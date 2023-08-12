@@ -40,6 +40,7 @@ function getMonthName(monthNumber) {
   }
 }
 
+//month + year e.g. January 1999
 function date(created) {
   let parts = created.split("T");
   let date = parts[0];
@@ -54,6 +55,7 @@ function date(created) {
   return month + " " + year;
 }
 
+//11 minutes, 3 days (ago) and similar...
 function timeAgo(created) {
   if (created === undefined) {
     return;
@@ -124,7 +126,26 @@ function timeAgo(created) {
   }
 }
 
+function month(dateString) {
+  const date = new Date(dateString);
+  const month = date.getMonth() + 1;
+  return month;
+}
+function year(dateString) {
+  const date = new Date(dateString);
+  const year = date.getFullYear();
+  return year;
+}
+function day(dateString) {
+  const date = new Date(dateString);
+  const day = date.getDate();
+  return day;
+}
+
 export default {
   timeAgo,
   date,
+  month,
+  day,
+  year,
 };

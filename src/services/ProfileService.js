@@ -1,13 +1,5 @@
 import axios from "axios";
 
-const apiClient = axios.create({
-  baseURL: "http://localhost:3000",
-  withCredentials: false,
-  headers: {
-    Accept: "application/json",
-    "Content-Type": "application/json",
-  },
-});
 //iz baze uzima sve sto mi treba za usera: name, handle, about, joined, # following, # followers
 //to cemo kmoristiti za deo gde je profile info
 //ovde parvimo i api request za to i samu dynamic rutu sa id-em
@@ -54,8 +46,13 @@ function getUserSuccess(res) {
 
 export default {
   User,
-  getUser(id) {
-    return apiClient.get("/api/profile/" + id, { withCredentials: true });
+  getAuthUser(id) {
+    return axios.get("http://localhost:3000/api/profile/" + id, {
+      withCredentials: true,
+    });
+  },
+  getAnyUser(id) {
+    return axios.get("http://localhost:3000/profile/" + id);
   },
   getUserSuccess,
 };

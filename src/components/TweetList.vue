@@ -3,7 +3,7 @@
     <Tweet
       v-for="tweet in tweets"
       :key="tweet.twt_id"
-      :name="tweet.usr_name"
+      :usr_name="tweet.usr_name"
       :id="tweet.twt_id"
       :handle="tweet.usr_handle"
       :content="tweet.twt_content"

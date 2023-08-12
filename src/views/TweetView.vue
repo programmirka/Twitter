@@ -17,7 +17,7 @@
     </div>
 
     <Tweet
-      :name="tweet.usr_name"
+      :usr_name="tweet.usr_name"
       :handle="tweet.usr_handle"
       :content="tweet.twt_content"
       :id="tweet.twt_id"

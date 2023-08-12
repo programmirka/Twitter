@@ -14,11 +14,9 @@ export default {
   },
   mounted() {
     //kada refreshujemo stranicu zelimo da nam za logovanog user ostane loggedUsser navigacija(home, profile)
-    if (LocalStorage.id) {
+    if (LocalStorage.id()) {
       this.loggedUserNav = true;
       this.loggedUserId = LocalStorage.id;
-
-      console.log(this.loggedUserId);
     } else {
       this.loggedUserNav = false;
     }
@@ -75,6 +73,12 @@ a.routher-link {
   margin-left: 100px;
 }
 
+body {
+  font-family: "Montserrat", sans-serif;
+  line-height: 1.6;
+  margin: 0;
+  min-height: 100vh;
+}
 /* ================================= 
   Media Queries
 ==================================== */

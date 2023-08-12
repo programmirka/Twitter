@@ -214,6 +214,28 @@ app.get("/comments/:id", (req, res) => {
   );
 });
 
+app.get("/profile/:id", (req, res) => {
+  var id = req.params.id;
+
+  DB.conn.query(
+    `SELECT 
+    user.usr_id, 
+    usr_name, 
+    usr_handle, 
+    usr_about, 
+    usr_joined, 
+    (SELECT COUNT(DISTINCT flw_follower) FROM follower WHERE flw_followee = user.usr_id) AS followers,
+    (SELECT COUNT(DISTINCT flw_followee) FROM follower WHERE flw_follower = user.usr_id) AS following 
+    FROM twitter_baza.user
+    WHERE user.usr_id = ?;`,
+    [id],
+    function (err, results, fields) {
+      if (err) throw err;
+      res.json({ data: results });
+    }
+  );
+});
+
 app.get("/follow", (req, res) => {
   DB.conn.query(
     `SELECT usr_id, usr_name, usr_handle, COUNT(follower.flw_follower) AS followers_number 

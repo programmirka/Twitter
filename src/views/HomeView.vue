@@ -22,7 +22,6 @@ export default {
 
 <template>
   <main>
-    <h1>Ovde ce mi ici tweetovi ljudi koje trenutno ulogovana osoba prati</h1>
     <TweetList :tweets="tweets" />
   </main>
 </template>

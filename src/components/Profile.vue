@@ -1,46 +1,82 @@
 <template>
-  <div class="profileBack">
-    <div class="profileBackground"></div>
-    <img src="@/assets/profile.png" alt="Profile Picture" />
-  </div>
-  <div class="profileInfo">
-    <button class="editBtn">Edit Profile</button>
-    <h3>
-      {{ user.usr_name }} | <br />
-      <span class="handle">@{{ user.usr_handle }}</span>
-    </h3>
-    <p class="about">{{ user.usr_about }}</p>
-    <div class="joined">{{ user.usr_joined }}</div>
-    <div class="following">
-      <span
-        ><b>{{ user.following }}</b> Following</span
-      ><span
-        ><b>{{ user.followers }}</b> Followers</span
-      >
+  <div v-if="user">
+    <div class="profileBack">
+      <div class="profileBackground"></div>
+      <img src="@/assets/profile.png" alt="Profile Picture" />
+    </div>
+    <div class="profileInfo">
+      <button v-if="id === user.usr_id" class="editBtn" @click="edit">
+        Edit Profile
+      </button>
+      <button v-else class="editBtn" @click="follow">{{ user.button }}</button>
+      <h3>
+        {{ user.usr_name }} | <br />
+        <span class="handle">@{{ user.usr_handle }}</span>
+      </h3>
+      <p class="about">{{ user.usr_about }}</p>
+      <div class="joined">{{ user.usr_joined }}</div>
+      <div class="following">
+        <span
+          ><b>{{ user.following }}</b> Following</span
+        ><span
+          ><b>{{ user.followers }}</b> Followers</span
+        >
+      </div>
     </div>
   </div>
 </template>
 <script>
+import FollowService from "../services/FollowService";
 import LocalStorage from "../services/LocalStorage";
 import ProfileService from "../services/ProfileService";
+
 export default {
   data() {
     return {
-      user: {},
+      id: String,
+      followers: {
+        follower_id: String,
+        followee_id: String,
+      },
     };
   },
-  mounted() {
-    let id = LocalStorage.id;
-    console.log("id usera", id);
-    if (id) {
-      ProfileService.getUser(id)
-        .then((res) => {
-          this.user = ProfileService.getUserSuccess(res);
-        })
-        .catch((e) => {
-          console.error("An error occurred:", e);
-        });
+  props: {
+    user: Object,
+  },
+  beforeMount() {
+    if (LocalStorage.id()) {
+      this.id = LocalStorage.id();
+      this.followers.follower_id = this.id;
     }
+  },
+  watch: {
+    followBtn(newVal, OldVal) {
+      if (newVal && !OldVal) {
+        this.followBtn = this.followBtnParent;
+      }
+    },
+  },
+  methods: {
+    edit() {
+      this.$emit("openEditProfile");
+    },
+    follow() {
+      console.log("this followers", this.followers);
+
+      this.followers.followee_id = this.user.usr_id;
+      FollowService.newFollow(this.followers)
+        .then((res) => {
+          if (res.data.data === "follow") {
+            this.user.button = "Unfollow";
+          } else {
+            this.user.button = "Follow";
+          }
+          console.log(res);
+        })
+        .catch((err) => {
+          console.error(err);
+        });
+    },
   },
 };
 </script>
@@ -55,6 +91,7 @@ export default {
 }
 .profileBack {
   position: relative;
+  z-index: -10;
 }
 img {
   height: 130px;
