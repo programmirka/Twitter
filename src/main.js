@@ -17,14 +17,17 @@ import { faTwitter } from "@fortawesome/free-brands-svg-icons";
 import { faComment } from "@fortawesome/free-regular-svg-icons";
 import { faThumbsUp } from "@fortawesome/free-regular-svg-icons";
 import { faArrowAltCircleLeft } from "@fortawesome/free-regular-svg-icons";
-
+import { faCalendar } from "@fortawesome/free-regular-svg-icons";
+import { faMagnifyingGlass } from "@fortawesome/free-solid-svg-icons";
 /* add icons to the library */
 library.add(
   faUserSecret,
   faTwitter,
   faComment,
   faThumbsUp,
-  faArrowAltCircleLeft
+  faArrowAltCircleLeft,
+  faCalendar,
+  faMagnifyingGlass
 );
 
 axios.defaults.withCredentials = true;

@@ -128,18 +128,24 @@ function timeAgo(created) {
 
 function month(dateString) {
   const date = new Date(dateString);
-  const month = date.getMonth() + 1;
-  return month;
+  var month = date.getMonth() + 1;
+  if (month < 10) {
+    month = "0" + month;
+  }
+  return parseInt(month);
 }
 function year(dateString) {
   const date = new Date(dateString);
-  const year = date.getFullYear();
+  var year = date.getFullYear();
   return year;
 }
 function day(dateString) {
   const date = new Date(dateString);
-  const day = date.getDate();
-  return day;
+  var day = date.getDate();
+  if (day < 10) {
+    day = "0" + day;
+  }
+  return parseInt(day);
 }
 
 export default {

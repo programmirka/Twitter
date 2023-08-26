@@ -48,6 +48,9 @@
           required
         ></BaseSelect
         ><br />
+        <p>
+          <em>To change the password please enter new password two times</em>
+        </p>
 
         <BaseInput
           v-model="user.password"
@@ -78,11 +81,11 @@ import Validation from "../services/Validation.js";
 export default {
   props: {
     editProfileModVis: Boolean, //treba da imamo u ProfilView na dugme edit da se lokalni data boolean za editProfileModalVisibility
+    id: [String, Number],
   },
   //polja nece biti prazna vec cu odmah u mountu za ovog user-a da ucitam trenutne podatke u input
   data() {
     return {
-      id: String,
       user: {
         name: "",
         handle: "",
@@ -101,7 +104,6 @@ export default {
       year: Array.from({ length: 100 }, (_, i) => new Date().getFullYear() - i),
       errors: {
         name: "",
-
         password: "",
         rePassword: "",
         handle: "",
@@ -142,15 +144,15 @@ export default {
         });
     },
   },
-  beforeMount() {
-    this.id = LocalStorage.id();
-  },
+
   mounted() {
+    console.log(this.id);
     if (this.id) {
       console.log(this.id);
       EditProfileService.openEditProfile(this.id)
         .then((res) => {
-          let userDB = EditProfileService.openEditProfileSuccess(res);
+          let userDB = res.data.data;
+          console.log("user DB", userDB);
           this.user.name = userDB.usr_name;
           this.user.email = userDB.usr_email;
           this.user.handle = userDB.usr_handle;
@@ -160,6 +162,14 @@ export default {
           this.user.birth.year = CreatedService.year(userDB.usr_birth);
 
           console.log(userDB.usr_birth);
+          console.log(
+            "day",
+            this.user.birth.day,
+            "month",
+            this.user.birth.month,
+            "year",
+            this.user.birth.year
+          );
         })
         .catch((err) => {
           console.error(err);

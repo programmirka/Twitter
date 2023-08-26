@@ -43,7 +43,7 @@ export default {
   display: flex;
   flex-direction: column;
   position: fixed;
-  width: 100px;
+  width: 117px;
   background-color: #f4f4f4;
   top: 100px;
   bottom: 0;
@@ -70,7 +70,7 @@ a.routher-link {
 
 .mainDiv {
   margin-top: 100px;
-  margin-left: 100px;
+  margin-left: 117px;
 }
 
 body {
@@ -79,6 +79,54 @@ body {
   margin: 0;
   min-height: 100vh;
 }
+.replyBtn {
+  border-radius: 20px;
+  height: 50px;
+  width: 80px;
+  font-size: 18px;
+  font-weight: 700;
+  color: white;
+  background-color: #6287ad;
+  cursor: pointer;
+}
+.replyBtn:hover {
+  height: 55px;
+  width: 85px;
+}
+.cancelBtn {
+  border-radius: 20px;
+  height: 50px;
+  width: 80px;
+  font-size: 18px;
+  font-weight: 400;
+  color: black;
+  background-color: aliceblue;
+  cursor: pointer;
+  margin-bottom: 7px;
+}
+.cancelBtn:hover {
+  height: 55px;
+  width: 85px;
+}
+.tweetEdit {
+  display: flex;
+  align-items: center;
+  padding-bottom: 20px;
+}
+
+.tweetEdit textarea {
+  font-family: "Montserrat", sans-serif;
+  font-size: 1em;
+  box-shadow: 10px 5px 5px grey;
+  margin-top: 20px;
+  width: 500px;
+  height: 150px;
+  resize: none;
+  margin-right: 20px;
+  border-radius: 15px;
+  padding: 10px;
+}
+
 /* ================================= 
   Media Queries
 ==================================== */

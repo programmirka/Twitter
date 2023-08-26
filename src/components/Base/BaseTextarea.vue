@@ -49,7 +49,8 @@ export default {
 .field {
   padding: 10px 10px 20px 10px;
   margin: 8px 0 18px;
-  font-size: 1.4em;
+  font-family: "Montserrat", sans-serif;
+  font-size: 1.1em;
   width: 500px;
   height: 100px;
   resize: none;

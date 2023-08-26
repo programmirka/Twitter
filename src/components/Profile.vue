@@ -8,13 +8,24 @@
       <button v-if="id === user.usr_id" class="editBtn" @click="edit">
         Edit Profile
       </button>
-      <button v-else class="editBtn" @click="follow">{{ user.button }}</button>
+      <button
+        v-else-if="id !== null"
+        :class="{ followBtn: user.isFollowing }"
+        class="editBtn"
+        @click="follow"
+      >
+        {{ user.button }}
+      </button>
+      <button v-else class="editBtn">Follow</button>
+      <!-- TODO:ovde ce ici neka f-ja koja ce reci user-u da se loginuje -->
       <h3>
         {{ user.usr_name }} | <br />
         <span class="handle">@{{ user.usr_handle }}</span>
       </h3>
       <p class="about">{{ user.usr_about }}</p>
-      <div class="joined">{{ user.usr_joined }}</div>
+      <div class="joined">
+        <font-awesome-icon :icon="['far', 'calendar']" /> Joined {{ joined }}
+      </div>
       <div class="following">
         <span
           ><b>{{ user.following }}</b> Following</span
@@ -28,54 +39,30 @@
 <script>
 import FollowService from "../services/FollowService";
 import LocalStorage from "../services/LocalStorage";
-import ProfileService from "../services/ProfileService";
+import CreatedService from "../services/CreatedService";
 
 export default {
-  data() {
-    return {
-      id: String,
-      followers: {
-        follower_id: String,
-        followee_id: String,
-      },
-    };
-  },
   props: {
     user: Object,
-  },
-  beforeMount() {
-    if (LocalStorage.id()) {
-      this.id = LocalStorage.id();
-      this.followers.follower_id = this.id;
-    }
-  },
-  watch: {
-    followBtn(newVal, OldVal) {
-      if (newVal && !OldVal) {
-        this.followBtn = this.followBtnParent;
-      }
-    },
+    id: [Number, String],
   },
   methods: {
     edit() {
       this.$emit("openEditProfile");
     },
     follow() {
-      console.log("this followers", this.followers);
+      //TODO: prebaci u profile view
+      this.$emit("follow");
+      console.log("sta se desava");
+    },
+  },
+  computed: {
+    joined() {
+      var day = CreatedService.day(this.user.usr_joined);
+      var month = CreatedService.month(this.user.usr_joined);
+      var year = CreatedService.year(this.user.usr_joined);
 
-      this.followers.followee_id = this.user.usr_id;
-      FollowService.newFollow(this.followers)
-        .then((res) => {
-          if (res.data.data === "follow") {
-            this.user.button = "Unfollow";
-          } else {
-            this.user.button = "Follow";
-          }
-          console.log(res);
-        })
-        .catch((err) => {
-          console.error(err);
-        });
+      return day + "-" + month + "-" + year;
     },
   },
 };
@@ -144,5 +131,8 @@ img {
 .joined {
   margin-top: 15px;
   margin-bottom: 10px;
+}
+.followBtn {
+  background-color: #6287ad;
 }
 </style>

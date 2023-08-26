@@ -13,7 +13,12 @@
       </RouterLink>
     </div>
     <div>
-      <button v-if="followers.follower_id" class="followBtn" @click="follow">
+      <button
+        v-if="followers.follower_id"
+        :class="{ following: isFollowing }"
+        class="followBtn"
+        @click="follow"
+      >
         {{ followBtn }}
       </button>
       <button v-else class="followBtn">Follow</button>
@@ -37,17 +42,20 @@ export default {
         followee_id: this.id,
       },
       followBtn: "Follow",
+      isFollowing: false,
     };
   },
   methods: {
     follow() {
       FollowService.newFollow(this.followers)
         .then((res) => {
-          console.log("Un/Follow Success", res.data);
+          console.log("(Un)Follow Success", res.data);
           if (res.data.data === "follow") {
             this.followBtn = "Unfollow";
+            this.isFollowing = true;
           } else {
             this.followBtn = "Follow";
+            this.isFollowing = false;
           }
         })
         .catch((err) => {
@@ -93,5 +101,8 @@ export default {
 .signIn:hover {
   color: #fff;
   cursor: pointer;
+}
+.following {
+  background-color: #6287ad;
 }
 </style>

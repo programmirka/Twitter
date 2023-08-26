@@ -13,20 +13,11 @@ class Follow {
 export default {
   Follow,
   getFollows() {
-    //za neautentifikovane user-e
     return axios.get("http://localhost:3000/follow");
   },
-  getAuthFollows() {
-    //za neautentifikovane user-e
-    return axios.get("http://localhost:3000/api/follow/");
-  },
+
   newFollow(object) {
     return axios.post("http://localhost:3000/api/follow", object, {
-      withCredentials: true,
-    });
-  },
-  checkFollowers(object) {
-    return axios.put("http://localhost:3000/api/follow", object, {
       withCredentials: true,
     });
   },

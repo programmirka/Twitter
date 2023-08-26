@@ -29,7 +29,7 @@ app.use(
     //bitan je redolsed middlewear-a
     name: "app-auth",
     keys: ["secret-new", "secret-old"],
-    maxAge: 60 * 60 * 24, //for 1 day
+    maxAge: 60 * 60 * 24 * 1000, //for 1 day
     path: "/",
   })
 );
@@ -122,151 +122,174 @@ app.get("/", (req, res) => {
   res.json({ Message: "Hellooo!", code: 200 });
 });
 
-app.get("/tweets", function (req, res) {
-  //request handler f-ja,  argumenti i telo(body) f-je
-  DB.conn.query(
-    `SELECT tweet.*, user.usr_name, user.usr_handle,
-	COUNT(DISTINCT like_tweet.usr_id) AS twt_likes,
-	COUNT(DISTINCT comment.usr_id) AS twt_comments
-	FROM twitter_baza.tweet
-	INNER JOIN user ON user.usr_id = tweet.usr_id
-	LEFT JOIN like_tweet ON like_tweet.twt_id = tweet.twt_id
-	LEFT JOIN comment ON comment.twt_id = tweet.twt_id
-	GROUP BY tweet.twt_id
-	ORDER BY tweet.twt_created DESC`,
-    function (err, results, fields) {
-      if (err) throw err;
-      res.json({ data: results });
-    }
-  );
-});
+// /tweets
+// /tweets
 
-//ovo je samo za profile view, od jednog usera
-app.get("/user_tweets/:id", function (req, res) {
+//dovlaci tweet-ove za explore, home i za profile view(ako je poslat id param)
+
+app.get("/tweets/:id?", async function (req, res) {
   //request handler f-ja,  argumenti i telo(body) f-je
   var id = req.params.id;
-  DB.conn.query(
-    `SELECT 
-    tweet.*, 
-    user.usr_name, 
-    user.usr_handle,
-    COUNT(DISTINCT like_tweet.usr_id) AS twt_likes,
-    COUNT(DISTINCT comment.usr_id) AS twt_comments
-    
-    FROM twitter_baza.tweet 
 
-    INNER JOIN user ON user.usr_id = tweet.usr_id
-    AND user.usr_id = ?
-        
-    LEFT JOIN like_tweet ON like_tweet.twt_id = tweet.twt_id
-    LEFT JOIN comment ON comment.twt_id = tweet.twt_id
+  var results = null;
 
-    GROUP BY tweet.twt_id, user.usr_name, user.usr_handle
-    ORDER BY tweet.twt_created DESC;`,
-    [id],
-    function (err, results, fields) {
-      if (err) throw err;
-      res.json({ data: results });
+  if (id !== "undefined") {
+    results = await DB.getProfileTweets(id);
+  } else {
+    results = await DB.getTweets();
+  }
+
+  if (req.isAuthenticated()) {
+    if (results) {
+      for (var i = 0; i < results.length; i++) {
+        if (await DB.checkTweetLikes(results[i].twt_id, req.user.id)) {
+          results[i].twt_liked = true;
+        } else {
+          results[i].twt_liked = false;
+        }
+      }
     }
-  );
-});
+  }
 
-app.get("/tweet/:id", (req, res) => {
-  var id = req.params.id;
-
-  DB.conn.query(
-    `SELECT tweet.*, user.usr_name, user.usr_handle,
-	COUNT(DISTINCT like_tweet.usr_id) AS twt_likes,
-	COUNT(DISTINCT comment.usr_id) AS twt_comments
-	FROM twitter_baza.tweet
-	INNER JOIN user ON user.usr_id = tweet.usr_id
-	LEFT JOIN like_tweet ON like_tweet.twt_id = tweet.twt_id
-	LEFT JOIN comment ON comment.twt_id = tweet.twt_id
-	WHERE tweet.twt_id = ?
-	GROUP BY tweet.twt_id`,
-    [id],
-    function (err, results, fields) {
-      if (err) throw err;
-      res.json({ data: results });
-    }
-  );
-});
-app.get("/comments/:id", (req, res) => {
-  var id = req.params.id;
-
-  DB.conn.query(
-    `SELECT comment.com_id, user.usr_name, user.usr_handle, 
-    comment.usr_id, comment.twt_id, comment.com_content, comment.com_created, 
-    comment.com_deleted, 
-    COUNT(like_comment.usr_id) as likes_number 
-    FROM twitter_baza.comment 
-    LEFT JOIN twitter_baza.like_comment ON (twitter_baza.like_comment.com_id = comment.com_id) 
-    LEFT JOIN twitter_baza.user ON ( user.usr_id = comment.usr_id) 
-    WHERE comment.twt_id = ? 
-    GROUP BY comment.com_id 
-    ORDER BY comment.com_created 
-    DESC`,
-    [id],
-    function (err, results, fields) {
-      if (err) throw err;
-      res.json({ data: results });
-    }
-  );
-});
-
-app.get("/profile/:id", (req, res) => {
-  var id = req.params.id;
-
-  DB.conn.query(
-    `SELECT 
-    user.usr_id, 
-    usr_name, 
-    usr_handle, 
-    usr_about, 
-    usr_joined, 
-    (SELECT COUNT(DISTINCT flw_follower) FROM follower WHERE flw_followee = user.usr_id) AS followers,
-    (SELECT COUNT(DISTINCT flw_followee) FROM follower WHERE flw_follower = user.usr_id) AS following 
-    FROM twitter_baza.user
-    WHERE user.usr_id = ?;`,
-    [id],
-    function (err, results, fields) {
-      if (err) throw err;
-      res.json({ data: results });
-    }
-  );
-});
-
-app.get("/follow", (req, res) => {
-  DB.conn.query(
-    `SELECT usr_id, usr_name, usr_handle, COUNT(follower.flw_follower) AS followers_number 
-	 FROM twitter_baza.user
-	 LEFT JOIN follower ON (user.usr_id = follower.flw_followee)
-	 GROUP BY user.usr_id
-	 ORDER BY followers_number DESC
-	 LIMIT 3`,
-    function (err, results, fields) {
-      if (err) throw err;
-      res.json({ data: results });
-    }
-  );
-});
-app.get("/trends", (req, res) => {
-  DB.conn.query(
-    `SELECT * FROM twitter_baza.tag
-	ORDER BY tag.tag_created DESC
-	LIMIT 3`,
-    function (err, results, fields) {
-      if (err) throw err;
-      res.json({ data: results });
-    }
-  );
-});
-
-app.post("/test", (req, res) => {
-  console.log("radi");
   res.status(200).json({
-    msg: "radi",
+    data: results,
   });
+});
+
+app.get("/tweet/:id", async (req, res) => {
+  var id = req.params.id;
+  console.log("tweet id", id);
+
+  let results = await DB.getTweet(id);
+  console.log("results u index get tweet", results);
+
+  if (req.isAuthenticated()) {
+    for (var i = 0; i < results.length; i++) {
+      if (await DB.checkTweetLikes(results[i].twt_id, req.user.id)) {
+        results[i].twt_liked = true;
+      } else {
+        results[i].twt_liked = false;
+      }
+    }
+  }
+
+  res.status(200).json({
+    data: results,
+  });
+});
+
+//TweetLikes
+app.get("/like/:id", async (req, res) => {
+  try {
+    let twt_id = req.params.id;
+    let results = await DB.getTweetLikes(twt_id);
+    console.log("tweet data likes", results);
+    res.status(200).json({
+      data: results,
+    });
+  } catch (err) {
+    console.error(new Error(err.message));
+  }
+});
+
+app.get("/comments/:id", async (req, res) => {
+  var id = req.params.id;
+
+  let results = await DB.getComments(id);
+
+  if (req.isAuthenticated()) {
+    if (results) {
+      for (var i = 0; i < results.length; i++) {
+        console.log("com id u index.js", results[i].com_id);
+        console.log("req user id u index.js", req.user.id);
+        if (await DB.checkCommentLikes(results[i].com_id, req.user.id)) {
+          results[i].com_liked = true;
+        } else {
+          results[i].com_liked = false;
+        }
+      }
+    }
+  }
+  console.log(results);
+  res.status(200).json({
+    data: results,
+  });
+});
+
+app.get("/profile/:id", async (req, res) => {
+  var id = req.params.id;
+  let results = null;
+  let isAuthenticated = null;
+  let isFollowing = null;
+
+  const user = await DB.findUserById(id);
+
+  if (!user)
+    return res.status(404).json({
+      timestamp: Date.now(),
+      msg: "User not found",
+      code: 404,
+    });
+
+  results = await DB.getUser(id);
+
+  if (req.isAuthenticated()) {
+    isAuthenticated = true;
+    isFollowing = await DB.findFollowers(req.user.id, id);
+  }
+
+  res.status(200).json({
+    data: results,
+    isAuthenticated: isAuthenticated,
+    isFollowing: isFollowing,
+  });
+
+  // res.status(500).json({
+  //   timestamp: Date.now(),
+  //   msg: "Failed to get user, internal server error",
+  //   code: 500,
+  // });
+});
+
+app.get("/follow", async (req, res) => {
+  try {
+    let results = null;
+    if (req.isAuthenticated()) {
+      let rawdata = await DB.followeeListForAuth(req.user.id);
+
+      let newArray = [];
+
+      for (var i = 0; i < rawdata.length; i++) {
+        if (!(await DB.findFollowers(req.user.id, rawdata[i].usr_id))) {
+          newArray.push(rawdata[i]);
+        }
+      }
+      results = newArray.slice(0, 3);
+    } else {
+      results = await DB.getFollowThreeUsers();
+    }
+
+    res.status(200).json({
+      data: results,
+    });
+  } catch (err) {
+    console.error(new Error(err.message));
+  }
+});
+
+app.get("/tag", async (req, res) => {
+  try {
+    let results = null;
+    //treba mi tag name, id, i broj tweet-ova
+
+    results = await DB.getTags();
+
+    res.status(200).json({
+      data: results,
+    });
+  } catch (err) {
+    console.error(new Error(err.message));
+  }
 });
 
 _.start();

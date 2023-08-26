@@ -3,6 +3,7 @@ const User = require("../models/user");
 const passport = require("passport");
 const DB = require("./db");
 const bcrypt = require("bcrypt");
+const { async } = require("validate.js");
 
 let _ = express.Router();
 
@@ -136,8 +137,7 @@ _.post("/login", (req, res, next) => {
   )(req, res, next);
 });
 
-//primer request-a za kojki user mora biti autentifikovan
-
+//edit profile: primer request-a za kojki user mora biti autentifikovan,
 _.get("/profile/:id", requireAuth, async (req, res) => {
   try {
     // console.group('\n GET /user -request details:');
@@ -158,28 +158,16 @@ _.get("/profile/:id", requireAuth, async (req, res) => {
         code: 404,
       });
 
-    // if (req.user.id === id)
-    //TODO: check in DB.js or user.js if there are some functions for that, just add missing data
-    DB.conn.query(
-      `SELECT 
-      user.usr_id, 
-      usr_name, 
-      usr_handle, 
-      usr_about, 
-      usr_joined, 
-      usr_birth, 
-      usr_email,
-      usr_pass,
-      (SELECT COUNT(DISTINCT flw_follower) FROM follower WHERE flw_followee = user.usr_id) AS followers,
-      (SELECT COUNT(DISTINCT flw_followee) FROM follower WHERE flw_follower = user.usr_id) AS following 
-      FROM twitter_baza.user
-      WHERE user.usr_id = ?;`,
-      [id],
-      function (err, results, fields) {
-        if (err) throw err;
-        res.json({ data: results });
-      }
-    );
+    console.log("u profile/id: ======", user.usr_id, id);
+
+    if (user.usr_id === id) {
+      let results = await DB.getUser(id);
+      console.log("u profile results", results);
+
+      res.status(200).json({
+        data: results,
+      });
+    }
   } catch (err) {
     console.error(new Error(err.message));
     res.status(500).json({
@@ -357,34 +345,6 @@ _.post("/follow", requireAuth, async (req, res) => {
     console.error(new Error(err.message));
   }
 });
-_.get("/follow", requireAuth, async (req, res) => {
-  try {
-    var id = req.user.id;
-
-    DB.conn.query(
-      `SELECT usr_id, usr_name, usr_handle, COUNT(follower.flw_follower) AS followers_number 
-      FROM twitter_baza.user
-      LEFT JOIN follower ON (user.usr_id = follower.flw_followee)
-      WHERE usr_id != ? 
-      GROUP BY user.usr_id
-      ORDER BY followers_number DESC`,
-      [id],
-      async function (err, results, fields) {
-        if (err) throw err;
-        let newArray = [];
-        for (var i = 0; i < results.length; i++) {
-          if (!(await DB.findFollowers(req.user.id, results[i].usr_id))) {
-            newArray.push(results[i]);
-          }
-        }
-        newArray = newArray.slice(0, 3);
-        res.json({ data: newArray });
-      }
-    );
-  } catch (err) {
-    console.error(new Error(err.message));
-  }
-});
 
 //check if followers(because of the follow / unfollow btn on the profile)
 _.put("/follow", requireAuth, async (req, res) => {
@@ -415,6 +375,7 @@ _.put("/follow", requireAuth, async (req, res) => {
 _.post("/like", requireAuth, async (req, res) => {
   try {
     const { twt_id, usr_id } = req.body;
+    console.log(twt_id, usr_id);
     if (await DB.checkTweetLikes(twt_id, usr_id)) {
       await DB.removeTweetLikes(twt_id, usr_id);
       res.status(200).json({
@@ -428,6 +389,334 @@ _.post("/like", requireAuth, async (req, res) => {
         data: "like",
       });
     }
+  } catch (err) {
+    console.error(new Error(err.message));
+  }
+});
+
+_.post("/comment_like", requireAuth, async (req, res) => {
+  try {
+    const { com_id, usr_id } = req.body;
+    console.log("u post comment like u router-u", com_id, usr_id);
+    if (await DB.checkCommentLikes(com_id, usr_id)) {
+      await DB.removeCommentLikes(com_id, usr_id);
+      res.status(200).json({
+        message: "Like has been removed from tweet",
+        data: "dislike",
+      });
+    } else {
+      await DB.addCommentLikes(com_id, usr_id);
+      res.status(200).json({
+        message: "Like has been added to the tweet",
+        data: "like",
+      });
+    }
+  } catch (err) {
+    console.error(new Error(err.message));
+  }
+});
+
+//drugi get like-ova je za ulogovanog gde je razlika sto u isto vreme proverava
+//i da li ulogovana osaba vec lajkuje dati tweet
+//ukoliko lajkuje saljemo u res.json neku potvrdu tipa data za br lajkova a messsage
+// da kaze da li lajkuje vec ili ne(u odnosu na to ikonica je puna ili prazna)
+
+//kada kliknemo probacu sa plus plus ili minus minus
+//a ako to ne radi onda sa novim upitom u bazu
+
+_.post("/comment", requireAuth, async (req, res) => {
+  try {
+    const { twt_id, com_content, usr_id } = req.body;
+    console.log("comment req body", twt_id, com_content, usr_id);
+    let results = await DB.addComment(twt_id, com_content, usr_id);
+    res.status(200).json({
+      message: "Successfully added comment",
+      data: results,
+    });
+  } catch (err) {
+    console.error(new Error(err.message));
+  }
+});
+
+_.post("/tweet", requireAuth, async (req, res) => {
+  try {
+    const { twt_content } = req.body;
+
+    const regex = /(?:^|\s)(#\w+)/g;
+    let match;
+    const tags = [];
+
+    while ((match = regex.exec(twt_content)) !== null) {
+      // Remove the # from the hashtag and add it to the array
+      tags.push(match[1].slice(1));
+    }
+
+    let twt_id = await DB.addTweet(twt_content, req.user.id);
+
+    var tag_ids = [];
+    if (tags.length) {
+      for (var i = 0; i < tags.length; i++) {
+        if (tags[i].length) {
+          var tagExistanceCheck = await DB.getTagId(tags[i]);
+          if (tagExistanceCheck) {
+            tag_ids.push(tagExistanceCheck);
+            continue;
+          }
+        }
+        tag_ids.push(await DB.addTag(tags[i]));
+      }
+    } else {
+      res.status(200).json({
+        message: "Successfully added tweet",
+      });
+    }
+
+    if (tag_ids.length) {
+      for (var i = 0; i < tag_ids.length; i++) {
+        console.log("checking if twt_id and tag id exist", twt_id, tag_ids[i]);
+        if (await DB.checkTagTweetConn(twt_id, tag_ids[i])) {
+          //avoiding duplication
+          continue;
+        } else {
+          await DB.tagTweetConn(twt_id, tag_ids[i]);
+        }
+      }
+      res.status(200).json({
+        message: "Successfully added tweet and tags",
+      });
+    }
+  } catch (err) {
+    console.error(new Error(err.message));
+  }
+});
+
+//com_id, usr_id( da je jednak req.user.id) - zapravo menjam bazu, ne brisem stavljam da je
+//komentar obrisan mna true
+_.delete("/comment/:id", requireAuth, async (req, res) => {
+  try {
+    //delete nema body kao i GET
+    var com_id = req.params.id;
+
+    var com_creator = await DB.checkComCreator(com_id);
+    let results = null;
+
+    if (req.user.id === com_creator.usr_id) {
+      results = await DB.deleteComment(com_id, com_creator.usr_id);
+    } else {
+      return res.status(401).json({
+        timestamp: Date.now(),
+        msg: "Unauthorised user",
+        code: 401,
+      });
+    }
+    res.status(200).json({
+      message: "Successfully deleted comment",
+      data: results,
+    });
+  } catch (err) {
+    console.error(new Error(err.message));
+  }
+});
+
+_.delete("/tweet/:id", requireAuth, async (req, res) => {
+  try {
+    var tweet_id = req.params.id;
+    var results = null;
+
+    var tweet_creator = await DB.checkTweetCreator(tweet_id);
+
+    if (tweet_creator.usr_id === req.user.id) {
+      results = await DB.deleteTweet(tweet_id);
+    } else {
+      return res.status(401).json({
+        timestamp: Date.now(),
+        msg: "Unauthorised user",
+        code: 401,
+      });
+    }
+
+    res.status(200).json({
+      message: "Successfully deleted comment",
+      data: results,
+    });
+  } catch (err) {
+    console.error(new Error(err.message));
+  }
+});
+
+_.put("/tweet", requireAuth, async (req, res) => {
+  try {
+    var { twt_id, twt_content } = req.body;
+    var results = null;
+
+    console.log("twt_id u tweet put u router-u", twt_id);
+
+    var tweet_creator = await DB.checkTweetCreator(twt_id);
+
+    if (tweet_creator.usr_id === req.user.id) {
+      var tag_ids_old_raw = await DB.getTagIdsFromTweet(twt_id);
+      var tag_ids_old = [];
+
+      if (tag_ids_old_raw) {
+        for (var i = 0; i < tag_ids_old_raw.length; i++) {
+          tag_ids_old.push(tag_ids_old_raw[i].tag_id);
+        }
+      }
+      console.log("Da li ispise?");
+
+      const regex = /(?:^|\s)(#\w+)/g;
+      let match;
+      const tags = [];
+
+      while ((match = regex.exec(twt_content)) !== null) {
+        // Remove the # from the hashtag and add it to the array
+        tags.push(match[1].slice(1));
+      }
+
+      var tag_ids_new = []; // novi niz tagova
+      console.log("Da li ispise? 2");
+      if (tags) {
+        console.log("Da li ispise? 3");
+        for (var i = 0; i < tags.length; i++) {
+          if (tags[i].length) {
+            var tagExistanceCheck = await DB.getTagId(tags[i]);
+            if (tagExistanceCheck) {
+              tag_ids_new.push(tagExistanceCheck);
+              continue;
+            }
+          }
+          tag_ids_new.push(await DB.addTag(tags[i]));
+        }
+
+        console.log("tag_ids_old", tag_ids_old);
+        console.log("tag_ids_new", tag_ids_new);
+
+        var filtered_tags_old = tag_ids_old.filter((oldTag) => {
+          return !tag_ids_new.some((newTag) => oldTag === newTag);
+        });
+
+        console.log("filtered_tag_old", filtered_tags_old);
+        console.log("twt_id", twt_id);
+
+        if (filtered_tags_old.length) {
+          await DB.deleteTagsfromTweetTag(twt_id, filtered_tags_old);
+        }
+
+        console.log("filtere_tags_new", filtered_tags_new);
+
+        var filtered_tags_new = tag_ids_new.filter((newTag) => {
+          return !tag_ids_old.some((oldTag) => oldTag === newTag);
+        });
+
+        if (filtered_tags_new.length) {
+          for (var i = 0; i < filtered_tags_new.length; i++) {
+            console.log(
+              "checking if twt_id and tag id exist",
+              twt_id,
+              filtered_tags_new[i]
+            );
+            if (await DB.checkTagTweetConn(twt_id, filtered_tags_new[i])) {
+              //avoiding duplication
+              continue;
+            } else {
+              await DB.tagTweetConn(twt_id, filtered_tags_new[i]);
+            }
+          }
+        }
+        results = await DB.editTweet(twt_id, twt_content);
+
+        //plus treba da proverim u trenutnom tweet-u koje tagove vec imamo pre promene
+        //      stari tagIds =    (DB.getTagIdFromTweet(twt_id))
+        //tagove koji su dodati da dodamo i povezemo i one koji su izbrisani da izbrisemo
+        //
+        // niz novih id-jeva dobijamo tako sto prvo
+        //niz starih poredimo:
+        // - polako izbacujemo ono sto ima i u njemu i u novom
+        // - ono sto ostane u staroj je izbrisano znaci treba da ibacimo iz tabele tweet_tag
+        // - ono sto nema u staroj a ima u novoj listi:
+        //                      -  dodajemo u tag tabelu ako vec ne postoji
+        //                      - i svakako dodajemo u tweet_tag tabelu
+      } else {
+        return res.status(401).json({
+          timestamp: Date.now(),
+          msg: "Unauthorized user",
+          code: 401,
+        });
+      }
+
+      res.status(200).json({
+        message: "Successfully deleted comment",
+        data: results,
+      });
+    }
+  } catch (err) {
+    console.error(new Error(err.message));
+  }
+});
+
+_.put("/comment", requireAuth, async (req, res) => {
+  try {
+    var { com_id, com_content } = req.body;
+
+    var com_creator = await DB.checkComCreator(com_id);
+    let results = null;
+
+    //menjam com_content i com_created
+    if (req.user.id === com_creator.usr_id) {
+      results = await DB.editComment(com_id, com_content);
+    } else {
+      return res.status(401).json({
+        timestamp: Date.now(),
+        msg: "Unauthorised user",
+        code: 401,
+      });
+    }
+    res.status(200).json({
+      message: "Successfully deleted comment",
+      data: results,
+    });
+  } catch (err) {
+    console.error(new Error(err.message));
+  }
+});
+
+_.get("/search/:term", requireAuth, async (req, res) => {
+  try {
+    var search_term = req.params.term;
+    var term = null;
+
+    console.log("search_term untrimmed:", search_term);
+    //check if I need to trim the term
+    let results = [];
+    if (search_term.length) {
+      if (search_term.indexOf("#") === 0) {
+        //znaci da je tag
+        term = search_term.slice(1);
+        var tagIdsArrayRaw = await DB.searchTagsByName(term);
+        var tagIdsArray = [];
+        for (var i = 0; i < tagIdsArrayRaw.length; i++) {
+          tagIdsArray.push(tagIdsArrayRaw[i].tag_id);
+        }
+        console.log("TagIds Array", tagIdsArray);
+        if (tagIdsArray) {
+          results = await DB.tweetsByTagIds(tagIdsArray);
+          console.log("tweets with tag/s", results);
+        }
+      }
+      if (search_term.indexOf("@") === 0) {
+        //znaci da je handle
+        term = search_term.slice(1);
+        results = await DB.tweetsByHandle(term);
+      } else {
+        //string
+        results = await DB.tweetsByTweetContentString(search_term);
+      }
+    }
+
+    res.status(200).json({
+      message: "Successfully completed search",
+      data: results,
+    });
   } catch (err) {
     console.error(new Error(err.message));
   }

@@ -125,6 +125,7 @@ export default {
 }
 .signIn {
   background-color: rgb(231, 188, 108);
+
   color: #34495e;
   padding: 0px 15px;
   border-radius: 10px;

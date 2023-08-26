@@ -39,7 +39,8 @@ _.password = () => {
   return constraints;
 };
 _.about = () => {
-  const regex = "^[-'A-Za-z0-9 ]{0,300}$";
+  const regex = /^[-'A-Za-z0-9 .,:;!@#$%^&*()_+={}[\]|<>/~\\?"'\n]{0,300}$/;
+
   const constraints = {
     presence: {
       allowEmpty: true,

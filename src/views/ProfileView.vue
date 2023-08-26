@@ -1,10 +1,24 @@
 <template>
-  <Profile :user="user" @openEditProfile="editProfileModVis = true"> </Profile>
-  <TweetList :tweets="tweets"></TweetList>
+  <Profile
+    :user="user"
+    :id="authUser_id"
+    @openEditProfile="editProfileModVis = true"
+    @follow="follow"
+  >
+  </Profile>
+  <NewTweet @publishTweet="publishTweet"></NewTweet>
+  <TweetList
+    @likeTweet="likeTweet"
+    @dislikeTweet="dislikeTweet"
+    :tweets="tweets"
+    @tweetEdited="tweetEdited"
+    @deleteTweet="tweetDeleted"
+  ></TweetList>
   <EditProfileModal
     @close="editProfileModVis = false"
     :editProfileModVis="editProfileModVis"
-    @editProfileSuccess="editProfileModVis = false"
+    @editProfileSuccess="editProfileSuccess"
+    :id="id"
   ></EditProfileModal>
 </template>
 <script>
@@ -15,63 +29,128 @@ import TweetService from "../services/TweetService";
 import ProfileService from "../services/ProfileService";
 import LocalStorage from "../services/LocalStorage";
 import FollowService from "../services/FollowService";
+import NewTweet from "@/components/newTweet.vue";
 
 export default {
   components: {
     Profile,
     TweetList,
     EditProfileModal,
+    NewTweet,
   },
   data() {
     return {
       tweets: [],
       user: {},
       editProfileModVis: false,
-      followers: {
-        follower_id: String,
-        followee_id: String,
-      },
+      authUser_id: null,
     };
   },
   props: {
     id: String,
   },
-  mounted() {
-    TweetService.getUserTweets(this.id)
-      .then((res) => {
-        this.tweets = TweetService.getTweetsSuccess(res);
-      })
-      .catch((e) => {
-        console.error(e);
-      });
+  methods: {
+    getTweets() {
+      TweetService.getTweets(this.id)
+        .then((res) => {
+          this.tweets = TweetService.getTweetsSuccess(res);
+          console.log(this.tweets);
+        })
+        .catch((e) => {
+          console.error(e);
+        });
 
-    ProfileService.getAnyUser(this.id)
-      .then((res) => {
-        this.user = ProfileService.getUserSuccess(res);
-        console.log("User u parent-u", this.user);
-        if (LocalStorage.id()) {
-          this.followers.follower_id = LocalStorage.id();
-          this.followers.followee_id = this.id;
-          FollowService.checkFollowers(this.followers)
-            .then((res) => {
-              if (res.data.data === "followers") {
-                this.user.button = "Unfollow";
-              } else {
-                this.user.button = "Follow";
-              }
-            })
-            .catch((err) => {
-              console.error(err);
-            });
+      this.authUser_id = LocalStorage.id();
+
+      this.getUser();
+    },
+    likeTweet(twt_id) {
+      for (var i = 0; i < this.tweets.length; i++) {
+        if (this.tweets[i].twt_id === twt_id) {
+          this.tweets[i].twt_likes++;
+          this.tweets[i].twt_liked = true;
         }
+      }
+    },
+    dislikeTweet(twt_id) {
+      for (var i = 0; i < this.tweets.length; i++) {
+        if (this.tweets[i].twt_id === twt_id) {
+          this.tweets[i].twt_likes--;
+          this.tweets[i].twt_liked = false;
+        }
+      }
+    },
+    getUser() {
+      ProfileService.getUser(this.id)
+        .then((res) => {
+          this.user = res.data.data;
+          this.user.isFollowing = res.data.isFollowing;
+
+          if (res.data.isAuthenticated) {
+            if (res.data.isFollowing) {
+              this.user.button = "Unfollow";
+            } else {
+              this.user.button = "Follow";
+            }
+          }
+        })
+        .catch((e) => {
+          console.error("An error occurred:", e);
+        });
+    },
+    follow() {
+      console.log(this.authUser_id, this.user.usr_id);
+      FollowService.newFollow({
+        follower_id: this.authUser_id,
+        followee_id: this.user.usr_id,
       })
-      .catch((e) => {
-        console.error("An error occurred:", e);
-      });
+        .then((res) => {
+          if (res.data.data === "follow") {
+            this.user.button = "Unfollow";
+            this.user.isFollowing = true;
+          } else {
+            this.user.button = "Follow";
+            this.user.isFollowing = false;
+            console.log(this.user);
+          }
+          console.log(res);
+        })
+        .catch((err) => {
+          console.error(err);
+        });
+    },
+    editProfileSuccess() {
+      this.editProfileModVis = false;
+      this.getUser();
+    },
+    tweetEdited() {
+      this.getTweets();
+    },
+    tweetDeleted(twt_id) {
+      TweetService.deleteTweet(twt_id)
+        .then((res) => {
+          this.getTweets();
+        })
+        .catch((err) => {
+          console.error(err);
+        });
+    },
+    publishTweet(twt_content) {
+      TweetService.publishTweet(twt_content)
+        .then((res) => {
+          this.getTweets();
+        })
+        .catch((err) => {
+          console.error("An error occured: ", err);
+        });
+    },
+  },
+  mounted() {
+    this.getTweets();
   },
   watch: {
     id(newValue, oldValue) {
-      TweetService.getUserTweets(newValue)
+      TweetService.getTweets(newValue)
         .then((res) => {
           this.tweets = TweetService.getTweetsSuccess(res);
         })
@@ -79,9 +158,9 @@ export default {
           console.error(e);
         });
 
-      ProfileService.getAnyUser(this.id)
+      ProfileService.getUser(this.id)
         .then((res) => {
-          this.user = ProfileService.getUserSuccess(res);
+          this.user = res.data.data;
         })
         .catch((e) => {
           console.error("An error occurred:", e);

@@ -34,15 +34,18 @@ export default {
   position: relative;
 }
 .corner {
-  border: 1px solid rgba(128, 128, 128, 0.048);
-  background-color: #fff;
-  border-radius: 10px;
-  padding: 2px 5px;
+  /* border: 1px solid rgba(128, 128, 128, 0.048); */
+  box-shadow: 2px 2px 5px 2px rgba(61, 120, 157, 0.449);
+  background-color: #6287ad15;
+  border-radius: 0 0 0 10px;
+  padding: 2px 8px;
   cursor: pointer;
   min-width: 100px;
+  color: #34495e;
+  font-size: 0.99em;
 }
 .corner:hover {
-  background-color: #6287ad4b;
+  background-color: #fff;
 }
 .logOut {
   border: 1px solid grey;

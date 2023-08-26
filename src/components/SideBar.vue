@@ -7,6 +7,13 @@
       v-if="loggedUserNav && id"
       >Profile</RouterLink
     >
+    <RouterLink
+      :to="{ name: 'search', params: { tag: id } }"
+      v-if="loggedUserNav"
+    >
+      <font-awesome-icon :icon="['fas', 'magnifying-glass']" />
+      Search</RouterLink
+    >
   </nav>
 </template>
 <script>

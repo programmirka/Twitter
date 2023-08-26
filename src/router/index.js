@@ -27,6 +27,12 @@ const router = createRouter({
       props: true,
       component: () => import("../views/ProfileView.vue"),
     },
+    {
+      path: "/search/:tag",
+      name: "search",
+      props: true,
+      component: () => import("../views/SearchView.vue"),
+    },
   ],
 });
 

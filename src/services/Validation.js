@@ -35,14 +35,15 @@ function handle(handle) {
     return "Handle can contain only letters, numbers, spaces, hyphens, and apostrophes and must be between 8-30 characters";
   }
 }
+
 function about(about) {
-  const re = /^[a-zA-Z0-9'.,:;!@#$%^&*()_+={}[\]|<>/~\\-]+$/;
+  const re = /^[-'A-Za-z0-9 .,:;!@#$%^&*()_+={}[\]|<>/~\\?"'\n]+$/;
 
   //only contains letters, numbers, spaces, hyphens, and apostrophes,
   if (re.test(about) && about.length < 300) {
     return "";
   } else {
-    return "About can contain only letters, numbers, spaces, hyphens, and apostrophes and must be below 300 characters";
+    return "About can't contain special characters and must be below 300 characters";
   }
 }
 function rePassword(password, rePassword) {

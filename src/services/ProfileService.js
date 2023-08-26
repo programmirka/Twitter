@@ -14,6 +14,7 @@ class User {
     usr_handle,
     usr_about,
     usr_joined,
+    usr_email,
     following,
     followers
   ) {
@@ -22,37 +23,37 @@ class User {
     this.usr_handle = usr_handle;
     this.usr_about = usr_about;
     this.usr_joined = usr_joined;
+    this.usr_email = usr_email;
     this.following = following;
     this.followers = followers;
   }
 }
 
-function getUserSuccess(res) {
-  var niz = res.data.data;
-  let user = {};
-  for (var i = 0; i < niz.length; i++) {
-    user = new User(
-      niz[0].usr_id,
-      niz[0].usr_name,
-      niz[0].usr_handle,
-      niz[0].usr_about,
-      niz[0].usr_joined,
-      niz[0].following,
-      niz[0].followers
-    );
-  }
-  return user;
-}
+//mislim da mi ovo ne treba
+
+// function getUserSuccess(res) {
+//   var niz = res.data.data;
+//   console.log("u profile service niz", niz);
+//   let user = {};
+//   for (var i = 0; i < niz.length; i++) {
+//     user = new User(
+//       niz[0].usr_id,
+//       niz[0].usr_name,
+//       niz[0].usr_handle,
+//       niz[0].usr_about,
+//       niz[0].usr_joined,
+//       niz[0].usr_email,
+//       niz[0].following,
+//       niz[0].followers
+//     );
+//   }
+//   console.log("u profile serbice user", user);
+//   return user;
+// }
 
 export default {
   User,
-  getAuthUser(id) {
-    return axios.get("http://localhost:3000/api/profile/" + id, {
-      withCredentials: true,
-    });
-  },
-  getAnyUser(id) {
+  getUser(id) {
     return axios.get("http://localhost:3000/profile/" + id);
   },
-  getUserSuccess,
 };
