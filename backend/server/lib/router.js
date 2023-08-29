@@ -38,16 +38,6 @@ _.post("/register", async (req, res) => {
       emailCheck
     );
 
-    // if (emailCheck) {
-    //   return res.status(400).json({
-    //     error: {
-    //       code: 400,
-    //       type: "emailUsed",
-    //       message: "Email is already in use",
-    //     },
-    //   });
-    // }
-
     let msg = false; //msg se javlja samo ako imamo neku gresku
 
     msg = user.setEmail(email);
@@ -97,6 +87,11 @@ _.post("/register", async (req, res) => {
     //res.redirect("/tweets");
   } catch (e) {
     throw new Error(e);
+    res.status(500).json({
+      timestamp: Date.now(),
+      msg: "Failed to register",
+      code: 500,
+    });
   }
 });
 
@@ -722,6 +717,136 @@ _.get("/search/:term", requireAuth, async (req, res) => {
   }
 });
 
+_.get("/admin/users", requireAuth, async (req, res) => {
+  try {
+    if (await DB.checkUserAdmin(req.user.id)) {
+      let results = await DB.getAllUsers();
+
+      res.status(200).json({
+        message: "Successfully loaded all users for Admin Panel",
+        data: results,
+      });
+    } else {
+      return res.status(401).json({
+        timestamp: Date.now(),
+        msg: "Unauthorised user",
+        code: 401,
+      });
+    }
+  } catch (err) {
+    console.error(new Error(err.message));
+  }
+});
+
+//searching throughout users
+_.get("/admin/search/:term", requireAuth, async (req, res) => {
+  try {
+    var search_term = req.params.term;
+    var term = null;
+
+    if (await DB.checkUserAdmin(req.user.id)) {
+      let results = [];
+
+      if (search_term.length) {
+        const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+        const isEmailValid = emailRegex.test(search_term);
+        console.log("is email valid", isEmailValid);
+
+        if (isEmailValid) {
+          results = await DB.getAllUsersWhrEmail(search_term);
+          console.log(results);
+        } else if (search_term.indexOf("@") === 0) {
+          term = search_term.slice(1);
+          results = await DB.getAllUsersWhrHandle(term);
+        } else if (search_term.toLowerCase() === "blocked") {
+          results = await DB.getAllUsersWhoBlocked();
+        } else if (search_term.toLowerCase() === "admin") {
+          results = await DB.getAllUsersWhoAdmin();
+        } else {
+          results = await DB.getAllUsersWhrName(search_term);
+        }
+      }
+
+      res.status(200).json({
+        message: "Successfully loaded specific user in Admin Panel",
+        data: results,
+      });
+    } else {
+      return res.status(401).json({
+        timestamp: Date.now(),
+        msg: "Unauthorised user",
+        code: 401,
+      });
+    }
+  } catch (err) {
+    console.error(new Error(err.message));
+  }
+});
+
+_.put("/admin/admin", requireAuth, async (req, res) => {
+  try {
+    var id = req.body.id;
+    let results = null;
+    let usr_admin = null;
+    console.log("id u admin put: ", id);
+    if (await DB.checkUserAdmin(req.user.id)) {
+      let isAdmin = await DB.checkUserAdmin(id);
+      if (isAdmin) {
+        console.log("is happening");
+        usr_admin = "0";
+        results = await DB.switchAdmin(id, usr_admin);
+      } else {
+        usr_admin = "1";
+        results = await DB.switchAdmin(id, usr_admin);
+        console.log("is happening 2", results);
+      }
+
+      res.status(200).json({
+        message: "Successfully chnaged Admin status",
+        data: results,
+      });
+    } else {
+      return res.status(401).json({
+        timestamp: Date.now(),
+        msg: "Unauthorised user",
+        code: 401,
+      });
+    }
+  } catch (err) {
+    console.error(new Error(err.message));
+  }
+});
+
+_.put("/admin/block", requireAuth, async (req, res) => {
+  try {
+    var id = req.body.id;
+    let results = null;
+    let usr_blocked = null;
+    console.log("id u block put: ", id);
+    if (await DB.checkUserAdmin(req.user.id)) {
+      let isAdmin = await DB.checkUserBlocked(id);
+      if (isAdmin) {
+        usr_blocked = "0";
+      } else {
+        usr_blocked = "1";
+      }
+      results = await DB.switchBlocked(id, usr_blocked);
+
+      res.status(200).json({
+        message: "Successfully chnaged Admin status",
+        data: results,
+      });
+    } else {
+      return res.status(401).json({
+        timestamp: Date.now(),
+        msg: "Unauthorised user",
+        code: 401,
+      });
+    }
+  } catch (err) {
+    console.error(new Error(err.message));
+  }
+});
 //POST /logout
 
 _.post("/logout", async (req, res, next) => {

@@ -41,28 +41,30 @@
           :error="errors.handle"
         ></BaseInput>
         <legend class="birthday">Birthday</legend>
-        <BaseSelect
-          :options="month"
-          v-model="user.birth.month"
-          label="Month"
-          vertical
-          required
-        ></BaseSelect>
-        <BaseSelect
-          :options="day"
-          v-model="user.birth.day"
-          label="Day"
-          required
-        ></BaseSelect>
-        <BaseSelect
-          :options="year"
-          v-model="user.birth.year"
-          label="Year"
-          required
-        ></BaseSelect>
+        <div class="birthdaySelect">
+          <BaseSelect
+            :options="month"
+            v-model="user.birth.month"
+            label="Month"
+            vertical
+            required
+          ></BaseSelect>
+          <BaseSelect
+            :options="day"
+            v-model="user.birth.day"
+            label="Day"
+            required
+          ></BaseSelect>
+          <BaseSelect
+            :options="year"
+            v-model="user.birth.year"
+            label="Year"
+            required
+          ></BaseSelect>
+        </div>
         <br />
 
-        <button class="submit" type="submit">Register</button>
+        <button class="submit registerBtn" type="submit">Register</button>
       </form>
     </div>
   </div>
@@ -152,10 +154,10 @@ export default {
           birth: birthday,
         })
         .then((res) => {
-          registerRequestSuccess(res);
+          this.registerRequestSuccess(res);
         })
         .catch((error) => {
-          registerRequestError(error);
+          this.registerRequestError(error);
         });
     },
     // axios.post("http://localhost:3000/test");
@@ -163,7 +165,7 @@ export default {
       this.$emit("close");
     },
     openLoginModal() {
-      this.$emit("openSignInModal");
+      this.$emit("openLoginModal");
     },
   },
   watch: {
@@ -208,13 +210,16 @@ export default {
 .birthday {
   padding: 0px;
 }
+.birthdaySelect {
+  display: flex;
+}
 .modal {
-  position: absolute;
+  position: fixed;
   z-index: 3000;
   top: 0px;
   left: 0px;
   width: 100%;
-  /* height: 100%; */
+
   background-color: rgba(0, 0, 0, 0.5);
   display: flex;
   justify-content: center;
@@ -223,11 +228,11 @@ export default {
   padding: 50px 0px 110%;
 }
 .register {
-  width: 800px;
-  height: 800px;
+  width: 650px;
+  height: 850px;
   background-color: aliceblue;
   padding: 8px 70px;
-  margin-top: 50px;
+  margin-top: 10px;
   position: relative;
 }
 .registerTitle {
@@ -235,6 +240,9 @@ export default {
 }
 .registerTitle h1 {
   margin: 0px;
+}
+.registerBtn {
+  width: 500px;
 }
 .registerTitle button,
 .submit {

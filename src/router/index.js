@@ -33,6 +33,11 @@ const router = createRouter({
       props: true,
       component: () => import("../views/SearchView.vue"),
     },
+    {
+      path: "/admin",
+      name: "admin",
+      component: () => import("../views/AdminView.vue"),
+    },
   ],
 });
 

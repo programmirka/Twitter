@@ -41,6 +41,15 @@ function id() {
   }
 }
 
+function admin() {
+  if (getUser()) {
+    let userAdmin = getUser().usr_admin ? true : false;
+    return userAdmin;
+  } else {
+    return;
+  }
+}
+
 //localStorage only supports string key-value pairs.
 //This means that if you want to store objects, arrays, or any non-string data,
 //you have to convert (serialize) it to a string first.
@@ -50,4 +59,5 @@ export default {
   getUser,
   removeUser,
   id,
+  admin,
 };

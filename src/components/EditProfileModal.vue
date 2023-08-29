@@ -28,27 +28,29 @@
         >
         </BaseTextarea>
         <legend class="birthday">Birthday</legend>
-        <BaseSelect
-          :options="month"
-          v-model="user.birth.month"
-          label="Month"
-          vertical
-          required
-        ></BaseSelect>
-        <BaseSelect
-          :options="day"
-          v-model="user.birth.day"
-          label="Day"
-          required
-        ></BaseSelect>
-        <BaseSelect
-          :options="year"
-          v-model="user.birth.year"
-          label="Year"
-          required
-        ></BaseSelect
-        ><br />
-        <p>
+        <div class="birthdaySelect">
+          <BaseSelect
+            :options="month"
+            v-model="user.birth.month"
+            label="Month"
+            vertical
+            required
+          ></BaseSelect>
+          <BaseSelect
+            :options="day"
+            v-model="user.birth.day"
+            label="Day"
+            required
+          ></BaseSelect>
+          <BaseSelect
+            :options="year"
+            v-model="user.birth.year"
+            label="Year"
+            required
+          ></BaseSelect>
+        </div>
+        <br />
+        <p class="passLabel">
           <em>To change the password please enter new password two times</em>
         </p>
 
@@ -115,6 +117,7 @@ export default {
   methods: {
     closeModal() {
       this.$emit("close");
+      this.loadEditProfile();
     },
     submitEdit() {
       if (
@@ -143,38 +146,43 @@ export default {
           console.error(error);
         });
     },
+    loadEditProfile() {
+      if (this.id) {
+        EditProfileService.openEditProfile(this.id)
+          .then((res) => {
+            let userDB = res.data.data;
+            console.log("user DB", userDB);
+            this.user.name = userDB.usr_name;
+            this.user.email = userDB.usr_email;
+            this.user.handle = userDB.usr_handle;
+            this.user.about = userDB.usr_about;
+            this.user.birth.day = parseInt(
+              CreatedService.day(userDB.usr_birth)
+            );
+            this.user.birth.month = parseInt(
+              CreatedService.month(userDB.usr_birth)
+            );
+            this.user.birth.year = CreatedService.year(userDB.usr_birth);
+
+            console.log(userDB.usr_birth);
+            console.log(
+              "day",
+              this.user.birth.day,
+              "month",
+              this.user.birth.month,
+              "year",
+              this.user.birth.year
+            );
+          })
+          .catch((err) => {
+            console.error(err);
+          });
+      }
+    },
   },
 
   mounted() {
-    console.log(this.id);
-    if (this.id) {
-      console.log(this.id);
-      EditProfileService.openEditProfile(this.id)
-        .then((res) => {
-          let userDB = res.data.data;
-          console.log("user DB", userDB);
-          this.user.name = userDB.usr_name;
-          this.user.email = userDB.usr_email;
-          this.user.handle = userDB.usr_handle;
-          this.user.about = userDB.usr_about;
-          this.user.birth.day = CreatedService.day(userDB.usr_birth);
-          this.user.birth.month = CreatedService.month(userDB.usr_birth);
-          this.user.birth.year = CreatedService.year(userDB.usr_birth);
-
-          console.log(userDB.usr_birth);
-          console.log(
-            "day",
-            this.user.birth.day,
-            "month",
-            this.user.birth.month,
-            "year",
-            this.user.birth.year
-          );
-        })
-        .catch((err) => {
-          console.error(err);
-        });
-    }
+    this.loadEditProfile();
   },
   //     editProfileRequestSuccess(res) {},
   //     editProfileRequestError(error) {
@@ -240,10 +248,11 @@ export default {
 </script>
 <style scoped>
 .modal {
-  position: absolute;
+  position: fixed;
   z-index: 3000;
   top: 0px;
   left: 0px;
+  min-height: 100vh;
   width: 100%;
   /* height: 100%; */
   background-color: rgba(0, 0, 0, 0.5);
@@ -251,14 +260,20 @@ export default {
   justify-content: center;
   align-items: center;
   flex-direction: column;
-  padding: 50px;
+  padding: 20px;
+}
+.birthdaySelect {
+  display: flex;
+}
+.passLabel {
+  margin: 0px;
 }
 .editProfile {
-  width: 800px;
-  height: 1000px;
+  width: 650px;
+  min-height: 880px;
   background-color: aliceblue;
   padding: 8px 70px;
-  margin-top: 50px;
+  margin-top: 15px;
   position: relative;
 }
 .editProfileTitle {

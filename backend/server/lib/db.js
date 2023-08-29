@@ -961,6 +961,252 @@ let _ = class DB {
     });
   }
 
+  static checkUserAdmin(id) {
+    return new Promise((resolve, reject) => {
+      if (!id) {
+        return reject(new Error("id not provided in the checkUserAdmin"));
+      }
+
+      this.conn.query(
+        `SELECT * FROM twitter_baza.user WHERE user.usr_id = ? AND user.usr_admin = ?`,
+        [id, "1"],
+        function (err, results, fileds) {
+          if (err) {
+            resolve(err);
+          }
+          if (results && results.length > 0) {
+            resolve(results[0]);
+          } else {
+            resolve(null);
+          }
+        }
+      );
+    });
+  }
+
+  static getAllUsers() {
+    return new Promise((resolve, reject) => {
+      this.conn.query(
+        `SELECT usr_name, usr_id, usr_handle, 
+        usr_email, usr_joined, usr_blocked, usr_admin 
+        FROM twitter_baza.user `,
+
+        function (err, results, fileds) {
+          if (err) {
+            resolve(err);
+          }
+          if (results && results.length > 0) {
+            resolve(results);
+          } else {
+            resolve(null);
+          }
+        }
+      );
+    });
+  }
+
+  static getAllUsersWhrName(name) {
+    return new Promise((resolve, reject) => {
+      if (!name) {
+        return reject(new Error("name not provided in the getAllUsersWhrName"));
+      }
+      this.conn.query(
+        `SELECT usr_name, usr_id, usr_handle, 
+        usr_email, usr_joined, usr_blocked, usr_admin 
+        FROM twitter_baza.user WHERE user.usr_name LIKE ? `,
+        [name + "%"],
+
+        function (err, results, fileds) {
+          if (err) {
+            resolve(err);
+          }
+          if (results && results.length > 0) {
+            resolve(results);
+          } else {
+            resolve(null);
+          }
+        }
+      );
+    });
+  }
+  static getAllUsersWhrHandle(handle) {
+    return new Promise((resolve, reject) => {
+      if (!handle) {
+        return reject(
+          new Error("handle not provided in the getAllUsersWhrHandle")
+        );
+      }
+      this.conn.query(
+        `SELECT usr_name, usr_id, usr_handle, 
+        usr_email, usr_joined, usr_blocked, usr_admin 
+        FROM twitter_baza.user WHERE user.usr_handle LIKE ? `,
+        [handle + "%"],
+
+        function (err, results, fileds) {
+          if (err) {
+            resolve(err);
+          }
+          if (results && results.length > 0) {
+            resolve(results);
+          } else {
+            resolve(null);
+          }
+        }
+      );
+    });
+  }
+
+  static getAllUsersWhrEmail(email) {
+    return new Promise((resolve, reject) => {
+      if (!email) {
+        return reject(
+          new Error("email not provided in the getAllUsersWhrEmail")
+        );
+      }
+      this.conn.query(
+        `SELECT usr_name, usr_id, usr_handle, 
+        usr_email, usr_joined, usr_blocked, usr_admin 
+        FROM twitter_baza.user WHERE user.usr_email = ? `,
+        [email],
+
+        function (err, results, fileds) {
+          if (err) {
+            resolve(err);
+          }
+          if (results && results.length > 0) {
+            resolve(results);
+          } else {
+            resolve(null);
+          }
+        }
+      );
+    });
+  }
+  static getAllUsersWhoBlocked() {
+    return new Promise((resolve, reject) => {
+      this.conn.query(
+        `SELECT usr_name, usr_id, usr_handle, 
+        usr_email, usr_joined, usr_blocked, usr_admin 
+        FROM twitter_baza.user WHERE user.usr_blocked = ? `,
+        [1],
+
+        function (err, results, fileds) {
+          if (err) {
+            resolve(err);
+          }
+          if (results && results.length > 0) {
+            resolve(results);
+          } else {
+            resolve(null);
+          }
+        }
+      );
+    });
+  }
+
+  static getAllUsersWhoAdmin() {
+    return new Promise((resolve, reject) => {
+      this.conn.query(
+        `SELECT usr_name, usr_id, usr_handle, 
+        usr_email, usr_joined, usr_blocked, usr_admin 
+        FROM twitter_baza.user WHERE user.usr_admin = ? `,
+        [1],
+
+        function (err, results, fileds) {
+          if (err) {
+            resolve(err);
+          }
+          if (results && results.length > 0) {
+            resolve(results);
+          } else {
+            resolve(null);
+          }
+        }
+      );
+    });
+  }
+
+  static switchAdmin(id, usr_admin) {
+    return new Promise((resolve, reject) => {
+      if (!id || !usr_admin) {
+        return reject(
+          new Error(
+            "id or usr_admin are not provided in the switchAdmin in db.js"
+          )
+        );
+      }
+
+      this.conn.query(
+        `UPDATE twitter_baza.user SET user.usr_admin = ? WHERE user.usr_id = ?`,
+        [usr_admin, id],
+
+        function (err, results, fileds) {
+          if (err) {
+            resolve(err);
+          }
+          if (results && results.length > 0) {
+            resolve(results);
+            console.log(this.sql);
+          } else {
+            resolve(null);
+          }
+        }
+      );
+    });
+  }
+
+  static switchBlocked(id, usr_blocked) {
+    return new Promise((resolve, reject) => {
+      if (!id || !usr_blocked) {
+        return reject(
+          new Error(
+            "id or usr_blocked are not provided in the switchAdmin in db.js"
+          )
+        );
+      }
+
+      this.conn.query(
+        `UPDATE twitter_baza.user SET user.usr_blocked = ? WHERE user.usr_id = ?`,
+        [usr_blocked, id],
+
+        function (err, results, fileds) {
+          if (err) {
+            resolve(err);
+          }
+          if (results && results.length > 0) {
+            resolve(results);
+            console.log(this.sql);
+          } else {
+            resolve(null);
+          }
+        }
+      );
+    });
+  }
+
+  static checkUserBlocked(id) {
+    return new Promise((resolve, reject) => {
+      if (!id) {
+        return reject(new Error("id not provided in the checkUserBlocked"));
+      }
+
+      this.conn.query(
+        `SELECT * FROM twitter_baza.user WHERE user.usr_id = ? AND user.usr_blocked = ?`,
+        [id, "1"],
+        function (err, results, fileds) {
+          if (err) {
+            resolve(err);
+          }
+          if (results && results.length > 0) {
+            resolve(results[0]);
+          } else {
+            resolve(null);
+          }
+        }
+      );
+    });
+  }
+
   static tweetsByTagIds(tagIdsArray) {
     return new Promise((resolve, reject) => {
       if (!tagIdsArray) {

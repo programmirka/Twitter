@@ -14,6 +14,7 @@
       <font-awesome-icon :icon="['fas', 'magnifying-glass']" />
       Search</RouterLink
     >
+    <RouterLink to="/admin" v-if="loggedUserNav && userAdmin">Admin</RouterLink>
   </nav>
 </template>
 <script>
@@ -21,16 +22,19 @@ import LocalStorage from "../services/LocalStorage";
 export default {
   props: {
     loggedUserNav: Boolean,
+
     //ovde cemo definisati id, koji ce se potom kao prop ucitavati na Profile View componenti
   },
   data() {
     return {
       id: null,
+      userAdmin: Boolean,
     };
   },
   beforeUpdate() {
     this.id = LocalStorage.id();
     console.log(LocalStorage.id());
+    this.userAdmin = LocalStorage.admin();
   },
 };
 console.log(LocalStorage.id());

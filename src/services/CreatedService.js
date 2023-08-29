@@ -132,7 +132,7 @@ function month(dateString) {
   if (month < 10) {
     month = "0" + month;
   }
-  return parseInt(month);
+  return month;
 }
 function year(dateString) {
   const date = new Date(dateString);
@@ -142,10 +142,11 @@ function year(dateString) {
 function day(dateString) {
   const date = new Date(dateString);
   var day = date.getDate();
+
   if (day < 10) {
     day = "0" + day;
   }
-  return parseInt(day);
+  return day;
 }
 
 export default {

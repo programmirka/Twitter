@@ -20,13 +20,15 @@
           :error="errors.password"
           required
         ></BaseInput>
-        <button class="submit" type="submit">Log In</button>
+        <button class="submit login" type="submit">Log In</button>
       </form>
       <hr />
-      <div>
+      <div class="newToTwitterDiv">
         <h3>New to Twitter?</h3>
         <p>Register now to share your opinion on various topics!</p>
-        <button class="submit" @click="openRegister">Register</button>
+        <button class="submit registerBtn" @click="openRegister">
+          Register
+        </button>
       </div>
     </div>
   </div>
@@ -57,6 +59,7 @@ export default {
       if (res.status !== 200) {
         return;
       }
+      console.log("res pri login-u", res.data.user);
       alert("Sign in successful!");
       this.$emit("close");
       this.$router.push("/"); //kad se uloguje ide na svoj home page
@@ -116,22 +119,22 @@ export default {
   padding: 0px;
 }
 .modal {
-  position: absolute;
+  position: fixed;
   z-index: 3000;
   top: 0px;
   left: 0px;
   width: 100%;
-  /* height: 100%; */
+
   background-color: rgba(0, 0, 0, 0.5);
   display: flex;
-  justify-content: center;
+  /* justify-content: center; */
   align-items: center;
   flex-direction: column;
-  padding: 50px 0px 110%;
+  padding: 0px 0px 110%;
 }
 .register {
-  width: 800px;
-  height: 800px;
+  width: 640px;
+  min-height: 570px;
   background-color: aliceblue;
   padding: 8px 70px;
   margin-top: 50px;
@@ -151,6 +154,14 @@ export default {
   font-size: 23px;
   border-radius: 10px;
 }
+.login {
+  margin: 20px 0 10px;
+  width: 500px;
+}
+.registerBtn {
+  margin-top: 10px;
+  width: 500px;
+}
 .registerTitle button {
   position: absolute;
   top: 0px;
@@ -169,5 +180,8 @@ export default {
 }
 .registerTitle button:active {
   background-color: #b53916cd;
+}
+.newToTwitterDiv {
+  text-align: center;
 }
 </style>

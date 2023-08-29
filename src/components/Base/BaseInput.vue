@@ -47,7 +47,7 @@ type="text">
 <style scoped>
 .field {
   padding: 10px 10px 20px 10px;
-  margin: 8px 0 18px;
+  margin: 8px 0 10px;
   font-size: 1.1em;
   width: 500px;
 }
