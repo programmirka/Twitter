@@ -15,6 +15,8 @@ class User {
     usr_about,
     usr_joined,
     usr_email,
+    usr_admin,
+    usr_blocked,
     following,
     followers
   ) {
@@ -24,6 +26,8 @@ class User {
     this.usr_about = usr_about;
     this.usr_joined = usr_joined;
     this.usr_email = usr_email;
+    this.usr_admin = usr_admin;
+    this.usr_blocked = usr_blocked;
     this.following = following;
     this.followers = followers;
   }

@@ -1,17 +1,12 @@
 <template>
   <div>
     <div class="back">
-      <RouterLink to="/explore">
-        <button @click="back">
-          <!--  za sada nema nista za back, 
-          ali moracu svakako nesto da smislim kako da mi se na back vraca na bilo koji od profile/explore.home 
-          u zavisnosti odakle je user usao -->
-          <font-awesome-icon
-            icon="fa-regular fa-arrow-alt-circle-left"
-            size="2xl"
-            style="color: #34495e"
-          />
-        </button>
+      <RouterLink to="/">
+        <font-awesome-icon
+          icon="fa-regular fa-arrow-alt-circle-left"
+          size="2xl"
+          style="color: #34495e"
+        />
       </RouterLink>
       <h2>Tweet</h2>
     </div>
@@ -28,12 +23,21 @@
       :usr_id="tweet.usr_id"
       :likes="tweet.twt_likes"
       :liked="tweet.twt_liked"
+      :profileImagePath="tweet.usr_profilePic"
       @deleteTweet="deleteTweet"
       @editTweet="editTweet"
+      @plsLoginModal="plsLoginModal = true"
     ></Tweet>
 
-    <div class="commentSection">
-      <img src="@/assets/profile.png" class="profilePic" />
+    <div v-if="authUser_id" class="replySection">
+      <div class="profilePicRply">
+        <img
+          :src="
+            'http://localhost:5173/backend/server/images/' + commentProfileImage
+          "
+          class="profilePic"
+        />
+      </div>
       <textarea placeholder="Tweet your reply!" v-model="newComment"></textarea>
       <button class="replyBtn" @click="comment">Reply</button>
     </div>
@@ -47,11 +51,16 @@
         @deleteComment="deleteComment"
         @editComment="editComment"
         :authUser_id="authUser_id"
+        @plsLoginModal="plsLoginModal = true"
       ></Comments>
     </div>
-    <div v-if="!comments.length">
+    <div class="noComment" v-if="!comments.length && authUser_id">
       <p><em>No comments yet. Be the first to comment!</em></p>
     </div>
+    <PleaseLoginModal
+      v-if="plsLoginModal"
+      @close="plsLoginModal = false"
+    ></PleaseLoginModal>
   </div>
 </template>
 <script>
@@ -60,7 +69,9 @@ import TweetService from "../services/TweetService";
 import Comments from "@/components/Comment.vue";
 import CommentService from "../services/CommentService";
 import LocalStorage from "../services/LocalStorage";
+import ProfileService from "../services/ProfileService";
 import LikeServices from "../services/LikeServices";
+import PleaseLoginModal from "@/components/PleaseLoginModal.vue";
 
 export default {
   data() {
@@ -74,6 +85,9 @@ export default {
         usr_id: LocalStorage.id(),
       },
       authUser_id: null,
+      plsLoginModal: false,
+      commentProfileImage: null,
+      // TODO: DODAJ
     };
   },
   props: {
@@ -82,6 +96,7 @@ export default {
   components: {
     Tweet,
     Comments,
+    PleaseLoginModal,
   },
   methods: {
     getComments() {
@@ -100,7 +115,8 @@ export default {
                 niz[i].com_created,
                 niz[i].com_deleted,
                 niz[i].likes_number,
-                niz[i].com_liked
+                niz[i].com_liked,
+                niz[i].usr_profilePic
               )
             );
           }
@@ -121,7 +137,8 @@ export default {
             niz[i].usr_handle,
             niz[i].twt_likes,
             niz[i].twt_comments,
-            niz[i].twt_liked
+            niz[i].twt_liked,
+            niz[i].usr_profilePic
           );
         }
         this.commentObj.twt_id = this.tweet.twt_id;
@@ -220,6 +237,13 @@ export default {
     this.getTweet();
     this.getComments();
     this.authUser_id = LocalStorage.id();
+    ProfileService.getUser(this.authUser_id)
+      .then((res) => {
+        this.commentProfileImage = res.data.data.usr_profilePic;
+      })
+      .catch((e) => {
+        console.error("An error occurred:", e);
+      });
     console.log("user_id", this.authUser_id);
   },
   watch: {
@@ -232,38 +256,59 @@ export default {
 };
 </script>
 <style>
-.commentSection textarea {
-  margin-top: 20px;
+.replySection textarea {
   width: 500px;
-  height: 150px;
+  height: 80px;
   resize: none;
   margin-right: 20px;
   border-radius: 15px;
   padding: 10px;
+  background-color: #9a9a9a13;
+  font-family: "Montserrat", sans-serif;
+  font-size: 1em;
+  border: 0.5px solid rgba(128, 128, 128, 0.335);
+}
+
+.profilePicRply {
+  position: relative;
+  width: 70px;
+  height: 70px;
+  overflow: hidden;
+  border-radius: 50%;
+  margin-right: 15px;
 }
 
 .profilePic {
-  height: 70px;
-  margin-right: 20px;
+  width: 70px;
+  position: absolute;
+  top: 0%;
+  left: 0%;
 }
-.commentSection {
+.replySection {
   display: flex;
   align-items: center;
   border-bottom: 1px solid #9a9a9a;
-  padding-bottom: 20px;
+  padding: 20px 20px 20px 100px;
 }
-.commentSection textarea {
-  font-family: "Montserrat", sans-serif;
-  font-size: 1em;
-}
+
 .back {
   display: flex;
+  padding-top: 10px;
+  align-items: left;
+  justify-content: left;
+  flex-direction: column;
 }
-.back button {
-  border: none;
-  background-color: #ffffff00;
-}
+
 .back h2 {
-  font-weight: 400;
+  font-weight: 200;
+  font-size: 1.4em;
+  margin-left: 5px;
+  color: rgb(153, 153, 153);
+}
+.noComment {
+  margin-left: 270px;
+  color: #34495e;
+  padding-top: 5px;
+  font-size: 1.1em;
 }
 </style>

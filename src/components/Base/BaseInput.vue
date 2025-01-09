@@ -1,5 +1,5 @@
 <template>
-  <label :for="uuid" v-if="label"
+  <label class="inputLabel" :for="uuid" v-if="label"
     >{{ label }} <span class="error" v-if="error">({{ error }})</span></label
   ><br />
   <input
@@ -46,14 +46,20 @@ type="text">
 </script>
 <style scoped>
 .field {
-  padding: 10px 10px 20px 10px;
-  margin: 8px 0 10px;
+  padding: 15px 15px 15px 10px;
+  margin: 2px 0 13px;
   font-size: 1.1em;
   width: 500px;
+  border-radius: 10px;
+  border: 0.5px grey solid;
+  background-color: rgb(242, 242, 242);
 }
 .error {
   color: red;
   font-size: 0.9em;
   padding: 1px;
+}
+.inputLabel {
+  font-size: 1.2em;
 }
 </style>

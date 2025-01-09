@@ -4,6 +4,8 @@ import router from "./router";
 import { upperFirst } from "lodash";
 import { camelCase } from "lodash";
 import axios from "axios";
+import VueDatePicker from "@vuepic/vue-datepicker";
+import "@vuepic/vue-datepicker/dist/main.css";
 
 /* import the fontawesome core */
 import { library } from "@fortawesome/fontawesome-svg-core";
@@ -19,6 +21,15 @@ import { faThumbsUp } from "@fortawesome/free-regular-svg-icons";
 import { faArrowAltCircleLeft } from "@fortawesome/free-regular-svg-icons";
 import { faCalendar } from "@fortawesome/free-regular-svg-icons";
 import { faMagnifyingGlass } from "@fortawesome/free-solid-svg-icons";
+import { faUser } from "@fortawesome/free-regular-svg-icons";
+import { faCompass } from "@fortawesome/free-regular-svg-icons";
+import { faHome } from "@fortawesome/free-solid-svg-icons";
+import { faGear } from "@fortawesome/free-solid-svg-icons";
+import { faArrowRightLong } from "@fortawesome/free-solid-svg-icons";
+import { faArrowLeftLong } from "@fortawesome/free-solid-svg-icons";
+import { faArrowDownLong } from "@fortawesome/free-solid-svg-icons";
+import { faChevronDown } from "@fortawesome/free-solid-svg-icons";
+
 /* add icons to the library */
 library.add(
   faUserSecret,
@@ -27,7 +38,15 @@ library.add(
   faThumbsUp,
   faArrowAltCircleLeft,
   faCalendar,
-  faMagnifyingGlass
+  faMagnifyingGlass,
+  faUser,
+  faCompass,
+  faHome,
+  faGear,
+  faArrowRightLong,
+  faArrowLeftLong,
+  faArrowDownLong,
+  faChevronDown
 );
 
 axios.defaults.withCredentials = true;
@@ -53,5 +72,6 @@ Object.keys(requireComponent).forEach((fileName) => {
 app.use(router);
 
 app.component("font-awesome-icon", FontAwesomeIcon);
+app.component("VueDatePicker", VueDatePicker);
 
 app.mount("#app");

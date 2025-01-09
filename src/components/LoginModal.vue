@@ -2,7 +2,7 @@
   <div class="modal" v-show="loginModalVisibility">
     <div class="register">
       <div class="registerTitle">
-        <button @click="closeModal">X</button>
+        <span class="close" @click="closeModal"> &times</span>
         <h1>Log In</h1>
       </div>
       <form @submit.prevent="login">
@@ -62,7 +62,7 @@ export default {
       console.log("res pri login-u", res.data.user);
       alert("Sign in successful!");
       this.$emit("close");
-      this.$router.push("/"); //kad se uloguje ide na svoj home page
+      this.$router.push("/home"); //kad se uloguje ide na svoj home page
 
       LocalStorage.setUser(res.data.user);
       this.$emit("loggedIn", LocalStorage.getUser());
@@ -118,7 +118,7 @@ export default {
 .birthday {
   padding: 0px;
 }
-.modal {
+/* .modal {
   position: fixed;
   z-index: 3000;
   top: 0px;
@@ -128,10 +128,11 @@ export default {
   background-color: rgba(0, 0, 0, 0.5);
   display: flex;
   /* justify-content: center; */
-  align-items: center;
+/* align-items: center;
   flex-direction: column;
   padding: 0px 0px 110%;
-}
+  border-radius: 10px; 
+} */
 .register {
   width: 640px;
   min-height: 570px;
@@ -140,13 +141,16 @@ export default {
   margin-top: 50px;
   position: relative;
 }
-.registerTitle {
+/* .registerTitle {
   display: flex;
-}
+} */
 .registerTitle h1 {
   margin: 0px;
+  padding: 10px;
+  text-align: center;
+  color: #34495e;
 }
-.registerTitle button,
+
 .submit {
   background-color: #b6bdc4;
   padding: 15px 20px;
@@ -162,12 +166,12 @@ export default {
   margin-top: 10px;
   width: 500px;
 }
-.registerTitle button {
+/* .registerTitle button {
   position: absolute;
   top: 0px;
   left: 0;
   border-radius: 0px;
-}
+} */
 .submit:hover {
   background-color: #6287ad;
 }
@@ -175,12 +179,12 @@ export default {
   background-color: #397dc1;
 }
 
-.registerTitle button:hover {
+/* .registerTitle button:hover {
   background-color: #b5391678;
 }
 .registerTitle button:active {
   background-color: #b53916cd;
-}
+} */
 .newToTwitterDiv {
   text-align: center;
 }

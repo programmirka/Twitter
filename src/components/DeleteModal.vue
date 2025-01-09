@@ -1,5 +1,5 @@
 <template>
-  <div class="modal">
+  <div class="modalDlt">
     <div class="modal-content">
       <span @click="close" class="close">&times</span>
       <p>Are you sure you want to delete?</p>
@@ -24,7 +24,7 @@ export default {
 };
 </script>
 <style scoped>
-.modal {
+.modalDlt {
   position: fixed;
   z-index: 3000;
   left: 0;
@@ -47,18 +47,20 @@ export default {
   box-shadow: 0 4px 8px 0 rgba(0, 0, 0, 0.2);
 }
 
-.close {
+/* .close {
   color: #aaa;
-  float: right;
   font-size: 28px;
   font-weight: bold;
   cursor: pointer;
+  position: absolute;
+  top: 0px;
+  right: 15px;
 }
 
 .close:hover {
   color: black;
   cursor: pointer;
-}
+} */
 .button {
   min-width: 60px;
   height: 32px;

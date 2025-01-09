@@ -43,17 +43,18 @@ export default {
   display: flex;
   flex-direction: column;
   position: fixed;
-  width: 117px;
+  width: 200px;
   background-color: #f4f4f4;
-  top: 100px;
+  top: 80px;
   bottom: 0;
   padding-top: 20px;
+  font-size: large;
 }
 .logo a,
 .main-nav a {
-  padding: 10px 15px;
+  padding: 10px 10px 10px 40px;
   text-transform: uppercase;
-  text-align: center;
+  text-align: left;
   display: block;
 }
 
@@ -69,29 +70,30 @@ a.routher-link {
 }
 
 .mainDiv {
-  margin-top: 100px;
-  margin-left: 117px;
+  margin-top: 80px;
+  margin-left: 200px;
+  padding: 15px;
 }
 
 body {
   font-family: "Montserrat", sans-serif;
-
   line-height: 1.6;
   margin: 0;
   min-height: 100vh;
 }
 .replyBtn {
-  border-radius: 20px;
-  height: 50px;
+  border-radius: 15px;
+  height: 40px;
   width: 80px;
-  font-size: 18px;
+  font-size: 16px;
   font-weight: 700;
   color: white;
   background-color: #6287ad;
   cursor: pointer;
+  border: 1px solid grey;
 }
 .replyBtn:hover {
-  height: 55px;
+  height: 45px;
   width: 85px;
 }
 .cancelBtn {
@@ -126,6 +128,78 @@ body {
   margin-right: 20px;
   border-radius: 15px;
   padding: 10px;
+}
+.adminDeleteBtn {
+  border-radius: 15px;
+  height: 50px;
+  width: 100px;
+  font-size: 18px;
+  font-weight: 400;
+  color: rgba(0, 0, 0, 0.641);
+  background-color: rgba(128, 128, 128, 0.168);
+  cursor: pointer;
+  margin-right: 20px;
+  border: 0.5px solid grey;
+}
+.adminDeleteBtn:hover {
+  background-color: rgba(128, 128, 128, 0.345);
+}
+.adminDeleteBtn:active {
+  background-color: rgba(128, 128, 128, 0.617);
+  color: rgb(255, 255, 255);
+}
+.mainColor {
+  color: #34495e;
+}
+.pagination {
+  display: flex;
+  margin: 0px 80px;
+  justify-content: space-between;
+}
+.pagination a {
+  text-decoration: none;
+  color: #2c3e50;
+}
+
+#page-prev {
+  padding: 20px;
+  font-size: 1.1em;
+  font-weight: 700;
+}
+
+#page-next {
+  padding: 20px;
+  font-size: 1.1em;
+  font-weight: 700;
+}
+.modal {
+  position: fixed;
+  z-index: 3000;
+  top: 0px;
+  left: 0px;
+  min-height: 100vh;
+  width: 100%;
+
+  background-color: rgba(0, 0, 0, 0.5);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  flex-direction: column;
+  padding: 20px;
+}
+.close {
+  color: #aaa;
+  font-size: 28px;
+  font-weight: bold;
+  cursor: pointer;
+  position: absolute;
+  top: 0px;
+  right: 15px;
+}
+
+.close:hover {
+  color: black;
+  cursor: pointer;
 }
 
 /* ================================= 

@@ -5,13 +5,15 @@ const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
   routes: [
     {
-      path: "/",
+      path: "/home",
       name: "home",
+      props: (route) => ({ page: parseInt(route.query.page) || 1 }),
       component: HomeView,
     },
     {
-      path: "/explore",
+      path: "/",
       name: "explore",
+      props: (route) => ({ page: parseInt(route.query.page) || 1 }),
       component: () => import("../views/ExploreView.vue"),
     },
 
@@ -24,13 +26,19 @@ const router = createRouter({
     {
       path: "/profile/:id",
       name: "profile-details",
-      props: true,
+      props: (route) => ({
+        page: parseInt(route.query.page) || 1,
+        id: route.params.id,
+      }),
       component: () => import("../views/ProfileView.vue"),
     },
     {
-      path: "/search/:tag",
+      path: "/search/:tag?",
       name: "search",
-      props: true,
+      props: (route) => ({
+        page: parseInt(route.query.page) || 1,
+        tag: route.params.tag,
+      }),
       component: () => import("../views/SearchView.vue"),
     },
     {

@@ -2,8 +2,7 @@
   <div class="modal" v-show="editProfileModVis && id">
     <div class="editProfile">
       <div class="editProfileTitle">
-        <button @click="closeModal">X</button>
-        <!-- emitovacu closeModal parent-u sto je ProfileView-->
+        <span class="close" @click="closeModal"> &times</span>
         <h1>Edit Profile</h1>
       </div>
       <form @submit.prevent="submitEdit">
@@ -14,12 +13,19 @@
           :error="errors.name"
           required
         ></BaseInput>
-        <BaseInput
+        <!-- <BaseInput
           v-model="user.handle"
           label="Handle"
           type="text"
           :error="errors.handle"
-        ></BaseInput>
+        ></BaseInput> -->
+        <label :for="uuid" class="handle"
+          ><span class="formLabel">Handle</span>
+          <span class="error" v-if="errors.handle">{{ errors.handle }}</span>
+
+          <span class="pre-text">@</span>
+          <input id="uuid" v-model="user.handle" class="fieldHandle" />
+        </label>
         <BaseTextarea
           v-model="user.about"
           label="About"
@@ -27,28 +33,14 @@
           :error="errors.about"
         >
         </BaseTextarea>
-        <legend class="birthday">Birthday</legend>
-        <div class="birthdaySelect">
-          <BaseSelect
-            :options="month"
-            v-model="user.birth.month"
-            label="Month"
-            vertical
-            required
-          ></BaseSelect>
-          <BaseSelect
-            :options="day"
-            v-model="user.birth.day"
-            label="Day"
-            required
-          ></BaseSelect>
-          <BaseSelect
-            :options="year"
-            v-model="user.birth.year"
-            label="Year"
-            required
-          ></BaseSelect>
-        </div>
+        <legend class="formLabel">Birthday</legend>
+        <VueDatePicker
+          v-model="date"
+          :enable-time-picker="false"
+          :dp__theme_light="false"
+          class="fieldBirthday"
+        ></VueDatePicker>
+
         <br />
         <p class="passLabel">
           <em>To change the password please enter new password two times</em>
@@ -69,7 +61,7 @@
 
         <br />
 
-        <button class="submit" type="submit">Sumbit</button>
+        <button class="submit" type="submit">Submit</button>
       </form>
     </div>
   </div>
@@ -79,12 +71,16 @@ import CreatedService from "@/services/CreatedService.js";
 import EditProfileService from "@/services/EditProfileService.js";
 import LocalStorage from "../services/LocalStorage";
 import Validation from "../services/Validation.js";
+import UniqueID from "@/services/UniqueID.js";
+import VueDatePicker from "@vuepic/vue-datepicker";
+import "@vuepic/vue-datepicker/dist/main.css";
 
 export default {
   props: {
     editProfileModVis: Boolean, //treba da imamo u ProfilView na dugme edit da se lokalni data boolean za editProfileModalVisibility
     id: [String, Number],
   },
+  components: { VueDatePicker },
   //polja nece biti prazna vec cu odmah u mountu za ovog user-a da ucitam trenutne podatke u input
   data() {
     return {
@@ -112,6 +108,8 @@ export default {
         about: "",
       },
       birthday: "",
+      authUser_id: LocalStorage.id(),
+      date: null,
     };
   },
   methods: {
@@ -147,7 +145,7 @@ export default {
         });
     },
     loadEditProfile() {
-      if (this.id) {
+      if (this.id === this.authUser_id) {
         EditProfileService.openEditProfile(this.id)
           .then((res) => {
             let userDB = res.data.data;
@@ -179,6 +177,12 @@ export default {
           });
       }
     },
+  },
+  setup() {
+    const uuid = UniqueID().getID();
+    return {
+      uuid,
+    };
   },
 
   mounted() {
@@ -243,28 +247,15 @@ export default {
         this.errors.about = Validation.about(newVal);
       }
     },
+    id(newVal, oldVal) {
+      if (newVal) {
+        return this.loadEditProfile();
+      }
+    },
   },
 };
 </script>
 <style scoped>
-.modal {
-  position: fixed;
-  z-index: 3000;
-  top: 0px;
-  left: 0px;
-  min-height: 100vh;
-  width: 100%;
-  /* height: 100%; */
-  background-color: rgba(0, 0, 0, 0.5);
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  flex-direction: column;
-  padding: 20px;
-}
-.birthdaySelect {
-  display: flex;
-}
 .passLabel {
   margin: 0px;
 }
@@ -272,44 +263,77 @@ export default {
   width: 650px;
   min-height: 880px;
   background-color: aliceblue;
+  background-color: #fff;
   padding: 8px 70px;
   margin-top: 15px;
   position: relative;
+  border-radius: 15px;
+  box-shadow: -3px 5px 12px -1px rgba(0, 0, 0, 0.559);
 }
-.editProfileTitle {
-  display: flex;
-}
+
 .editProfileTitle h1 {
   margin: 0px;
+  padding: 10px;
+  text-align: center;
+  color: #34495e;
 }
-.editProfileTitle button {
-  background-color: #b6bdc4;
-  padding: 15px 20px;
-  border: none;
-  font-size: 23px;
-  border-radius: 10px;
-  position: absolute;
-  top: 0px;
-  left: 0;
-  border-radius: 0px;
-}
-.editProfileTitle button:hover {
-  background-color: #b5391678;
-}
-.editProfileTitle button:active {
-  background-color: #b53916cd;
-}
+
 .submit {
   background-color: #b6bdc4;
   padding: 15px 20px;
   border: none;
   font-size: 23px;
   border-radius: 10px;
+  margin: 0px 0 15px;
+  width: 500px;
 }
 .submit:hover {
   background-color: #6287ad;
 }
 .submit:active {
   background-color: #397dc1;
+}
+
+.error {
+  color: red;
+  font-size: 0.9em;
+  padding: 1px;
+}
+.handle {
+  position: relative;
+}
+.fieldHandle {
+  padding: 15px 15px 15px 26px;
+  margin: 2px 0 13px;
+  font-size: 1.1em;
+  width: 500px;
+  border-radius: 10px;
+  border: 0.5px grey solid;
+  background-color: rgb(242, 242, 242);
+}
+
+.fieldBirthday {
+  margin: 2px 0 13px;
+  font-size: 1.1em;
+  width: 500px;
+  border-radius: 10px;
+  border: 0.5px grey solid;
+  color: rgb(242, 242, 242);
+  background-color: purple;
+}
+
+.formLabel {
+  font-size: 1.2em;
+}
+
+.pre-text {
+  position: absolute;
+  left: 10px;
+  top: 52px;
+  color: grey;
+  transform: translateY(-50%);
+  pointer-events: none;
+  font-size: larger;
+  z-index: 1;
 }
 </style>

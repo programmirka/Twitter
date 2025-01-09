@@ -5,17 +5,17 @@
     </p>
     <div class="searchDiv">
       <input
-        class="field"
+        class="searchField"
         :placeholder="placeholder"
         v-model="searchTerm"
         @keydown.enter="search"
       />
 
       <button
-        class="replyBtn"
+        class="searchBtn"
         :disabled="!searchTerm.length"
         @click="search"
-        :class="{ disabledButton: !searchTerm.length }"
+        :class="{ disabledButtonSrch: !searchTerm.length }"
       >
         <font-awesome-icon :icon="['fas', 'magnifying-glass']" />
         Search
@@ -51,7 +51,23 @@ export default {
 };
 </script>
 <style>
-.field {
+.searchDivBack {
+  z-index: 100;
+  background-color: #f7fbffe9;
+  position: fixed;
+  width: 100%;
+  margin-left: -15px;
+  box-shadow: 37px 10px 20px 35px #f7fbffc5; /* Adjusted box-shadow for subtleness */
+}
+
+.searchDivBack p {
+  padding: 0 25px;
+  font-size: 1.1em;
+  font-weight: 200;
+  margin: 10px 0px 0px;
+  color: #34495e;
+}
+.searchField {
   padding: 15px 10px 20px 10px;
   margin: 8px 0 18px;
   font-family: "Montserrat", sans-serif;
@@ -67,22 +83,8 @@ export default {
   padding: 10px 20px;
   display: flex;
 }
-.searchDivBack {
-  z-index: 100;
-  background-color: #f7fbffe9;
-  position: fixed;
-  width: 100%;
-  box-shadow: 37px 10px 20px 35px #f7fbffc5; /* Adjusted box-shadow for subtleness */
-}
 
-.searchDivBack p {
-  padding: 0 25px;
-  font-size: 1.1em;
-  font-weight: 200;
-  margin: 10px 0px 0px;
-  color: #34495e;
-}
-.replyBtn {
+.searchBtn {
   border-radius: 20px;
   height: 50px;
   width: 110px;
@@ -93,16 +95,16 @@ export default {
   cursor: pointer;
   margin: 8px 10px 18px;
 }
-.replyBtn:hover {
+.searchBtn:hover {
   height: 55px;
   width: 112px;
 }
-.disabledButton {
+.disabledButtonSrch {
   background-color: #cacaca5e;
   color: rgba(96, 96, 96, 0.566);
   cursor: auto;
 }
-.disabledButton:hover {
+.disabledButtonSrch:hover {
   height: 50px;
   width: 110px;
 }

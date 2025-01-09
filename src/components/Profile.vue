@@ -2,27 +2,60 @@
   <div v-if="user">
     <div class="profileBack">
       <div class="profileBackground"></div>
-      <img src="@/assets/profile.png" alt="Profile Picture" />
+      <div class="image-container">
+        <img
+          v-if="id === user.usr_id"
+          src="http://localhost:5173/changePicHover.jpeg"
+          alt="Overlay"
+          :style="{ opacity: hovering ? '0.9' : '0' }"
+          class="overlay-image"
+        />
+        <img
+          @click="UpdateProfilePic"
+          :src="
+            'http://localhost:5173/backend/server/images/' + profileImagePath
+          "
+          alt="User's profile picture"
+          class="profile-image"
+          :style="{ opacity: hovering && id === user.usr_id ? '0.1' : '1' }"
+          @mouseover="handleMouseOver"
+          @mouseout="handleMouseOut"
+        />
+      </div>
     </div>
+
     <div class="profileInfo">
-      <button v-if="id === user.usr_id" class="editBtn" @click="edit">
-        Edit Profile
-      </button>
-      <button
-        v-else-if="id !== null"
-        :class="{ followBtn: user.isFollowing }"
-        class="editBtn"
-        @click="follow"
-      >
-        {{ user.button }}
-      </button>
-      <button v-else class="editBtn">Follow</button>
+      <div class="buttons">
+        <button
+          @click="block"
+          v-if="admin && adminId !== user.usr_id"
+          class="adminDeleteBtn"
+        >
+          {{ user.blockedBtn }}
+
+          <!-- Your login request could not be completed at this time. For further assistance, please contact our customer support. -->
+        </button>
+        <button v-else-if="id === user.usr_id" class="editBtn" @click="edit">
+          Edit Profile
+        </button>
+
+        <button
+          v-else-if="id"
+          :class="{ followBtn: user.isFollowing }"
+          class="editBtn"
+          @click="follow"
+        >
+          {{ user.button }}
+        </button>
+        <button v-else @click="plsLoginModal" class="editBtn">Follow</button>
+      </div>
+
       <!-- TODO:ovde ce ici neka f-ja koja ce reci user-u da se loginuje -->
       <h3>
         {{ user.usr_name }} | <br />
         <span class="handle">@{{ user.usr_handle }}</span>
       </h3>
-      <p class="about">{{ user.usr_about }}</p>
+      <p class="about mainColor">{{ user.usr_about }}</p>
       <div class="joined">
         <font-awesome-icon :icon="['far', 'calendar']" /> Joined {{ joined }}
       </div>
@@ -42,9 +75,17 @@ import LocalStorage from "../services/LocalStorage";
 import CreatedService from "../services/CreatedService";
 
 export default {
+  data() {
+    return {
+      admin: LocalStorage.admin(),
+      adminId: LocalStorage.adminId(),
+      hovering: false,
+    };
+  },
   props: {
     user: Object,
     id: [Number, String],
+    profileImagePath: String,
   },
   methods: {
     edit() {
@@ -54,6 +95,32 @@ export default {
       //TODO: prebaci u profile view
       this.$emit("follow");
       console.log("sta se desava");
+    },
+    plsLoginModal() {
+      this.$emit("plsLoginModal");
+    },
+    block() {
+      this.$emit("block");
+    },
+    // handleFileUpload(event) {
+    //   this.$emit("handleFileUpload", event);
+    // },
+    handleMouseOver() {
+      console.log("Mouse over triggered");
+
+      this.hovering = true;
+    },
+    handleMouseOut() {
+      console.log("Mouse out triggered");
+      this.hovering = false;
+    },
+    UpdateProfilePic() {
+      console.log(this.id, this.user.usr_id);
+      if (this.id === this.user.usr_id) {
+        this.$emit("openProfilePicModal");
+      } else {
+        return;
+      }
     },
   },
   computed: {
@@ -70,6 +137,7 @@ export default {
 <style scoped>
 .profileBackground {
   height: 200px;
+  margin: -30px -15px 0px;
   background-image: url(@/assets/jean-philippe-delberghe-75xPHEQBmvA-unsplash.jpg);
   background-attachment: fixed;
   background-size: cover;
@@ -78,39 +146,35 @@ export default {
 }
 .profileBack {
   position: relative;
-  z-index: -10;
 }
-img {
-  height: 130px;
-  position: absolute;
-  bottom: 0px;
-  bottom: -65px;
-  margin-left: 20px;
-}
+
 .profileInfo {
   display: flex;
   flex-direction: column;
-  border-top: 30px solid rgba(128, 128, 128, 0.047);
   margin-left: 20px;
   padding-bottom: 30px;
+  padding-top: 100px;
   border-bottom: 2px solid rgba(128, 128, 128, 0.064);
+  position: relative;
 }
 .profileInfo h3 {
   margin: 0px;
 }
 .editBtn {
-  flex-basis: 60px;
+  height: 50px;
   width: 100px;
-  align-self: flex-end;
   margin-top: 15px;
   margin-right: 15px;
   border-radius: 15px;
   border: 1px solid grey;
   cursor: pointer;
   font-size: 1.1em;
+  color: rgba(0, 0, 0, 0.641);
 }
+
 .editBtn:hover {
   background-color: aliceblue;
+  color: rgba(0, 0, 0, 0.847);
 }
 .handle,
 .following,
@@ -134,5 +198,45 @@ img {
 }
 .followBtn {
   background-color: #6287ad;
+}
+.buttons {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  display: flex;
+  flex-direction: column;
+}
+
+.image-container {
+  margin-left: 20px;
+  bottom: -75px;
+  left: 0;
+  position: absolute;
+  width: 150px;
+  height: 150px;
+  overflow: hidden;
+  border-radius: 50%;
+  border: #fff solid 6px;
+  box-sizing: content-box;
+  z-index: 100;
+}
+.profile-image {
+  width: 150px;
+  position: absolute;
+  top: 0%;
+  left: 0%;
+  z-index: 102;
+}
+
+.overlay-image {
+  width: 150px;
+}
+
+.profile-image:active {
+  opacity: 0.5;
+}
+
+.overlay-image {
+  z-index: 101;
 }
 </style>

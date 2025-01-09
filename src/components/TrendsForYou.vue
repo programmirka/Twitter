@@ -7,6 +7,7 @@
       :tag_name="trend.tag_name"
       :twt_number="trend.tweets_number"
       :tag_id="trend.tag_id"
+      @plsLoginModal="plsLoginModal"
     ></Trend>
   </div>
 </template>
@@ -31,19 +32,11 @@ export default {
       .catch((err) => {
         console.error(err);
       });
-
-    //     TrendService.getTrends().then((res) => {
-    //       var niz = res.data.data;
-    //       for (var i = 0; i < niz.length; i++) {
-    //         this.trends.push(
-    //           new TrendService.Trend(
-    //             niz[i].tag_id,
-    //             niz[i].tag_name,
-    //             niz[i].tag_created
-    //           )
-    //         );
-    //       }
-    //     });
+  },
+  methods: {
+    plsLoginModal() {
+      this.$emit("plsLoginModal");
+    },
   },
 };
 </script>

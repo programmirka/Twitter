@@ -33,8 +33,12 @@
               @change="switchBlock(user.usr_id)"
               type="checkbox"
               id="mySwitch"
+              :disabled="adminId === user.usr_id"
             />
-            <span class="slider"></span>
+            <span
+              class="slider"
+              :class="{ disabledBtn: adminId === user.usr_id }"
+            ></span>
           </label>
         </td>
         <td class="center">
@@ -44,8 +48,12 @@
               @change="switchAdmin(user.usr_id)"
               type="checkbox"
               id="mySwitch"
+              :disabled="adminId === user.usr_id"
             />
-            <span class="slider"></span>
+            <span
+              class="slider"
+              :class="{ disabledBtn: adminId === user.usr_id }"
+            ></span>
           </label>
         </td>
       </tr>
@@ -84,6 +92,7 @@ import Search from "@/components/Search.vue";
 import SearchService from "@/services/SearchServices.js";
 import AdminServices from "@/services/AdminServices.js";
 import CreatedService from "../services/CreatedService";
+import LocalStorage from "../services/LocalStorage";
 
 //admin ce u ovom view-u moci da vidi celu listu user-a.
 // moci ce da ih pretrazuje na vrhu u search-bar-u. Imace tabelu sa
@@ -96,6 +105,7 @@ export default {
   components: { Search },
   data() {
     return {
+      adminId: LocalStorage.adminId(),
       searchLabel:
         "Search for user by name, handle, email or keywords 'blocked' or 'admin':",
       searchPlaceholder:
@@ -164,6 +174,7 @@ export default {
   background-color: #f7fbffce;
   width: 100%;
   z-index: 2;
+  margin: -15px -15px;
 }
 .mainAdmin h1 {
   font-size: 1.5em;
@@ -172,7 +183,7 @@ export default {
   padding-left: 25px;
 }
 .searchResults {
-  padding: 220px 0px 10px;
+  padding: 205px 0px 10px;
 }
 .searchResults table {
   width: 100%;
@@ -184,7 +195,7 @@ export default {
   background-color: rgb(226, 239, 250);
   width: 100%;
   position: sticky;
-  top: 320px;
+  top: 300px;
   z-index: 2;
 }
 .searchResults td,
@@ -276,5 +287,14 @@ input:checked + .slider:before {
 }
 .hidden td {
   border-color: rgba(255, 255, 255, 0);
+}
+
+input:checked + .disabledBtn {
+  background-color: #6287ad3b;
+  cursor: auto;
+}
+.disabledBtn {
+  background-color: #cccccc41;
+  cursor: auto;
 }
 </style>

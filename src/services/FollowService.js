@@ -1,10 +1,11 @@
 import axios from "axios";
 
 class Follow {
-  constructor(usr_id, usr_name, usr_handle) {
+  constructor(usr_id, usr_name, usr_handle, usr_profilePic) {
     this.usr_id = usr_id;
     this.usr_name = usr_name;
     this.usr_handle = usr_handle;
+    this.usr_profilePic = usr_profilePic;
   }
 }
 

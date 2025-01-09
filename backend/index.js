@@ -8,6 +8,8 @@ const DB = require("./server/lib/db");
 const bcrypt = require("bcrypt");
 const { reject } = require("lodash");
 var cors = require("cors");
+const fileUpload = require("express-fileupload");
+const path = require("path"); //TODO: mislim da treba da instaliram
 
 const app = express(); //inicijalizacija  express servera pod const-antom app
 const port = 3000; //damo port na kom ce server da slusa
@@ -23,6 +25,10 @@ _.start = () => {
     throw new Error(e);
   }
 };
+
+app.use(fileUpload());
+
+app.use("/images", express.static(path.join(__dirname, "../images")));
 
 app.use(
   cookieSession({
@@ -42,6 +48,7 @@ app.use(
   cors({
     origin,
     credentials: true,
+    exposedHeaders: ["x-total-count"],
   })
 );
 
@@ -53,7 +60,10 @@ app.use(passport.session());
 passport.serializeUser((user, done) => {
   //serializeUser f-ja stavlja info u cookie
   console.log(`4. Serialize user: ${JSON.stringify(user.usr_id)}`);
-  return done(null, user.usr_id); //storujemo user id u session cookie koji se salje frontend-u pod svojim id-em, jer nam je to dovoljno, a u isto vreme
+  console.log("========= user ==========", user.usr_blocked);
+
+  return done(null, user.usr_id);
+  //storujemo user id u session cookie koji se salje frontend-u pod svojim id-em, jer nam je to dovoljno, a u isto vreme
   //na client strani se ne vide osetljive informacije o user-u koje se mogu zloupotrebiti jer su vidljive svima
 });
 
@@ -97,6 +107,10 @@ passport.use(
         });
       });
 
+      if (user.usr_blocked === 1) {
+        return done("User is blocked", null);
+      }
+
       // console.log(`result:  ${result}`); result vraca true ili false - password-i se poklapaju ili ne
 
       if (result) {
@@ -130,13 +144,22 @@ app.get("/", (req, res) => {
 app.get("/tweets/:id?", async function (req, res) {
   //request handler f-ja,  argumenti i telo(body) f-je
   var id = req.params.id;
+  var limit = parseInt(req.query._limit) || 10;
+  var page = parseInt(req.query._page) || 1;
+  var offset = (page - 1) * limit;
+  var totalTweets = null;
+
+  console.log("limit", limit, "page", page);
+  console.log("request.params", req.params.id);
 
   var results = null;
 
   if (id !== "undefined") {
-    results = await DB.getProfileTweets(id);
-  } else {
-    results = await DB.getTweets();
+    results = await DB.getProfileTweets(id, limit, offset);
+    totalTweets = await DB.getTotalProfileTweets(id);
+  } else if (id === "undefined") {
+    results = await DB.getTweets(limit, offset);
+    totalTweets = await DB.getTotalTweets();
   }
 
   if (req.isAuthenticated()) {
@@ -150,6 +173,8 @@ app.get("/tweets/:id?", async function (req, res) {
       }
     }
   }
+
+  res.setHeader("x-total-count", totalTweets);
 
   res.status(200).json({
     data: results,

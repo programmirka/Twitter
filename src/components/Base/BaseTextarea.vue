@@ -1,5 +1,5 @@
 <template>
-  <label :for="uuid" v-if="label"
+  <label class="textLabel" :for="uuid" v-if="label"
     >{{ label }} <span class="error" v-if="error">({{ error }})</span></label
   ><br />
   <textarea
@@ -47,17 +47,22 @@ export default {
 </script>
 <style scoped>
 .field {
-  padding: 10px 10px 20px 10px;
-  margin: 8px 0 18px;
+  padding: 15px 15px 15px 10px;
+  margin: 2px 0 13px;
   font-family: "Montserrat", sans-serif;
   font-size: 1.1em;
   width: 500px;
   height: 100px;
+  border-radius: 10px;
+  background-color: rgb(242, 242, 242);
   resize: none;
 }
 .error {
   color: red;
   font-size: 0.9em;
   padding: 1px;
+}
+.textLabel {
+  font-size: 1.2em;
 }
 </style>

@@ -1,6 +1,11 @@
 <template>
   <div class="commentSection">
-    <img src="@/assets/profile.png" class="profilePic" />
+    <div class="image-container">
+      <img
+        :src="'http://localhost:5173/backend/server/images/' + profileImagePath"
+        class="profile-image"
+      />
+    </div>
     <textarea placeholder="Make a new Tweet!" v-model="newTweet"></textarea>
     <button
       class="replyBtn"
@@ -19,6 +24,7 @@ export default {
       newTweet: "",
     };
   },
+  props: ["profileImagePath"],
   methods: {
     publish() {
       this.$emit("publishTweet", { twt_content: this.newTweet });
@@ -28,52 +34,50 @@ export default {
 };
 </script>
 <style scoped>
-/* the same as in tweetView for reply */
-textarea {
-  margin-top: 20px;
-  width: 600px;
-  height: 150px;
-  resize: none;
-  margin-right: 20px;
-  border-radius: 15px;
-  padding: 10px;
-}
-.replyBtn {
-  border-radius: 20px;
-  height: 50px;
-  width: 80px;
-  font-size: 18px;
-  font-weight: 700;
-  color: white;
-  background-color: #6287ad;
-  cursor: pointer;
-}
-.replyBtn:hover {
-  height: 55px;
-  width: 85px;
-}
-
-.profilePic {
-  height: 70px;
-  margin-right: 20px;
-}
 .commentSection {
   display: flex;
   align-items: center;
   border-bottom: 1px solid #9a9a9a;
-  padding-bottom: 20px;
+  padding: 10px 20px 20px;
+  position: relative;
 }
-.commentSection textarea {
+textarea {
+  width: 600px;
+  height: 90px;
+  resize: none;
+  margin-right: 10px;
+  margin-left: 90px;
+  border-radius: 15px;
+  padding: 10px;
+  background-color: #9a9a9a13;
   font-family: "Montserrat", sans-serif;
   font-size: 1em;
+  border: 0.5px solid rgba(128, 128, 128, 0.335);
 }
+
 .disabledButton {
   background-color: #cacaca5e;
   color: rgba(96, 96, 96, 0.566);
-  cursor: auto;
+  border: grey solid 0.5px;
+  cursor: no-drop;
 }
 .disabledButton:hover {
-  height: 50px;
+  height: 40px;
   width: 80px;
+}
+
+.image-container {
+  left: 15px;
+  position: absolute;
+  width: 85px;
+  height: 85px;
+  overflow: hidden;
+  border-radius: 50%;
+}
+.profile-image {
+  width: 85px;
+  position: absolute;
+  top: 0%;
+  left: 0%;
 }
 </style>

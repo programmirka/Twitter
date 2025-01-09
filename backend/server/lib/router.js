@@ -3,6 +3,9 @@ const User = require("../models/user");
 const passport = require("passport");
 const DB = require("./db");
 const bcrypt = require("bcrypt");
+const path = require("path");
+const fs = require("fs");
+
 const { async } = require("validate.js");
 
 let _ = express.Router();
@@ -86,12 +89,12 @@ _.post("/register", async (req, res) => {
 
     //res.redirect("/tweets");
   } catch (e) {
-    throw new Error(e);
     res.status(500).json({
       timestamp: Date.now(),
       msg: "Failed to register",
       code: 500,
     });
+    throw new Error(e);
   }
 });
 
@@ -495,7 +498,9 @@ _.delete("/comment/:id", requireAuth, async (req, res) => {
     var com_creator = await DB.checkComCreator(com_id);
     let results = null;
 
-    if (req.user.id === com_creator.usr_id) {
+    let admin = await DB.checkUserAdmin(req.user.id);
+
+    if (req.user.id === com_creator.usr_id || admin) {
       results = await DB.deleteComment(com_id, com_creator.usr_id);
     } else {
       return res.status(401).json({
@@ -513,6 +518,40 @@ _.delete("/comment/:id", requireAuth, async (req, res) => {
   }
 });
 
+_.get("/tweets/home", requireAuth, async function (req, res) {
+  //request handler f-ja,  argumenti i telo(body) f-je
+  var limit = parseInt(req.query._limit) || 10;
+  var page = parseInt(req.query._page) || 1;
+  console.log("limit and page", limit, page);
+  var offset = (page - 1) * limit;
+  console.log("offset", offset);
+  var totalTweets = null;
+
+  console.log("limit", limit, "page", page);
+
+  var results = null;
+
+  results = await DB.getHomeTweets(limit, offset, req.user.id);
+  totalTweets = await DB.getTotalHomeTweets(req.user.id);
+  console.log("totalTweets:", totalTweets);
+
+  if (results) {
+    for (var i = 0; i < results.length; i++) {
+      if (await DB.checkTweetLikes(results[i].twt_id, req.user.id)) {
+        results[i].twt_liked = true;
+      } else {
+        results[i].twt_liked = false;
+      }
+    }
+  }
+
+  res.setHeader("x-total-count", totalTweets);
+
+  res.status(200).json({
+    data: results,
+  });
+});
+
 _.delete("/tweet/:id", requireAuth, async (req, res) => {
   try {
     var tweet_id = req.params.id;
@@ -520,7 +559,10 @@ _.delete("/tweet/:id", requireAuth, async (req, res) => {
 
     var tweet_creator = await DB.checkTweetCreator(tweet_id);
 
-    if (tweet_creator.usr_id === req.user.id) {
+    let admin = await DB.checkUserAdmin(req.user.id);
+    console.log("admin **************", admin);
+
+    if (tweet_creator.usr_id === req.user.id || admin) {
       results = await DB.deleteTweet(tweet_id);
     } else {
       return res.status(401).json({
@@ -550,7 +592,7 @@ _.put("/tweet", requireAuth, async (req, res) => {
 
     if (tweet_creator.usr_id === req.user.id) {
       var tag_ids_old_raw = await DB.getTagIdsFromTweet(twt_id);
-      var tag_ids_old = [];
+      var tag_ids_old = []; //tag ids before the tweet was edited
 
       if (tag_ids_old_raw) {
         for (var i = 0; i < tag_ids_old_raw.length; i++) {
@@ -561,14 +603,15 @@ _.put("/tweet", requireAuth, async (req, res) => {
 
       const regex = /(?:^|\s)(#\w+)/g;
       let match;
-      const tags = [];
+      const tags = []; //all tags from edited tweet in strings
 
       while ((match = regex.exec(twt_content)) !== null) {
         // Remove the # from the hashtag and add it to the array
         tags.push(match[1].slice(1));
       }
 
-      var tag_ids_new = []; // novi niz tagova
+      var tag_ids_new = []; // all tags from edited tweet in ids
+
       console.log("Da li ispise? 2");
       if (tags) {
         console.log("Da li ispise? 3");
@@ -576,48 +619,59 @@ _.put("/tweet", requireAuth, async (req, res) => {
           if (tags[i].length) {
             var tagExistanceCheck = await DB.getTagId(tags[i]);
             if (tagExistanceCheck) {
+              // if tag exists ad id of that tag
               tag_ids_new.push(tagExistanceCheck);
               continue;
             }
           }
           tag_ids_new.push(await DB.addTag(tags[i]));
+          //if tag doesn't exist add id of newly added tag
         }
 
         console.log("tag_ids_old", tag_ids_old);
         console.log("tag_ids_new", tag_ids_new);
 
-        var filtered_tags_old = tag_ids_old.filter((oldTag) => {
-          return !tag_ids_new.some((newTag) => oldTag === newTag);
-        });
+        if (tag_ids_old) {
+          //tag ids before the tweet was edited
+          var filtered_tags_old = tag_ids_old.filter((oldTag) => {
+            return !tag_ids_new.some((newTag) => oldTag === newTag);
+          });
 
-        console.log("filtered_tag_old", filtered_tags_old);
-        console.log("twt_id", twt_id);
+          //filtered_tags_old - old tags that don't exist anymore after edit
+          //checking if some of old tags are deleted to remove them from
+          //tweet_tag table
 
-        if (filtered_tags_old.length) {
-          await DB.deleteTagsfromTweetTag(twt_id, filtered_tags_old);
+          if (filtered_tags_old.length) {
+            await DB.deleteTagsfromTweetTag(twt_id, filtered_tags_old);
+          }
         }
 
-        console.log("filtere_tags_new", filtered_tags_new);
+        if (tag_ids_new) {
+          // all tags from new edited tweet in ids
+          var filtered_tags_new = tag_ids_new.filter((newTag) => {
+            return !tag_ids_old.some((oldTag) => oldTag === newTag);
+            //filtered_tags_new - new tags that didn't exist before edit
+          });
 
-        var filtered_tags_new = tag_ids_new.filter((newTag) => {
-          return !tag_ids_old.some((oldTag) => oldTag === newTag);
-        });
-
-        if (filtered_tags_new.length) {
-          for (var i = 0; i < filtered_tags_new.length; i++) {
-            console.log(
-              "checking if twt_id and tag id exist",
-              twt_id,
-              filtered_tags_new[i]
-            );
-            if (await DB.checkTagTweetConn(twt_id, filtered_tags_new[i])) {
-              //avoiding duplication
-              continue;
-            } else {
-              await DB.tagTweetConn(twt_id, filtered_tags_new[i]);
+          if (filtered_tags_new.length) {
+            for (var i = 0; i < filtered_tags_new.length; i++) {
+              console.log(
+                "checking if twt_id and tag id exist",
+                twt_id,
+                filtered_tags_new
+              );
+              if (await DB.checkTagTweetConn(twt_id, filtered_tags_new[i])) {
+                continue;
+                //avoiding duplication, e.g. when during edit someone enters same tag more times
+              } else {
+                await DB.tagTweetConn(twt_id, filtered_tags_new[i]);
+                // in case the connection doesn't exist already, add connection
+                //in tweet_tag table
+              }
             }
           }
         }
+
         results = await DB.editTweet(twt_id, twt_content);
 
         //plus treba da proverim u trenutnom tweet-u koje tagove vec imamo pre promene
@@ -678,6 +732,10 @@ _.put("/comment", requireAuth, async (req, res) => {
 _.get("/search/:term", requireAuth, async (req, res) => {
   try {
     var search_term = req.params.term;
+    var limit = parseInt(req.query._limit) || 10;
+    var page = parseInt(req.query._page) || 1;
+    var offset = (page - 1) * limit;
+    var totalTweets = null;
     var term = null;
 
     console.log("search_term untrimmed:", search_term);
@@ -687,26 +745,50 @@ _.get("/search/:term", requireAuth, async (req, res) => {
       if (search_term.indexOf("#") === 0) {
         //znaci da je tag
         term = search_term.slice(1);
+        console.log(limit, offset);
         var tagIdsArrayRaw = await DB.searchTagsByName(term);
         var tagIdsArray = [];
-        for (var i = 0; i < tagIdsArrayRaw.length; i++) {
-          tagIdsArray.push(tagIdsArrayRaw[i].tag_id);
+        if (tagIdsArrayRaw) {
+          for (var i = 0; i < tagIdsArrayRaw.length; i++) {
+            tagIdsArray.push(tagIdsArrayRaw[i].tag_id);
+          }
         }
         console.log("TagIds Array", tagIdsArray);
-        if (tagIdsArray) {
-          results = await DB.tweetsByTagIds(tagIdsArray);
+        if (tagIdsArray.length) {
+          console.log("is it happening?");
+          results = await DB.tweetsByTagIds(tagIdsArray, limit, offset);
           console.log("tweets with tag/s", results);
+          totalTweets = await DB.getTotalTweetsByTagIds(tagIdsArray);
         }
       }
       if (search_term.indexOf("@") === 0) {
         //znaci da je handle
         term = search_term.slice(1);
-        results = await DB.tweetsByHandle(term);
-      } else {
+        results = await DB.tweetsByHandle(term, limit, offset);
+        totalTweets = await DB.getTotalTweetsByHandle(term);
+      } else if (results.length === 0) {
         //string
-        results = await DB.tweetsByTweetContentString(search_term);
+        console.log("is else happening?");
+        results = await DB.tweetsByTweetContentString(
+          search_term,
+          limit,
+          offset
+        );
+        totalTweets = await DB.getTotalTweetsByString(search_term);
       }
     }
+
+    if (results) {
+      for (var i = 0; i < results.length; i++) {
+        if (await DB.checkTweetLikes(results[i].twt_id, req.user.id)) {
+          results[i].twt_liked = true;
+        } else {
+          results[i].twt_liked = false;
+        }
+      }
+    }
+
+    res.setHeader("x-total-count", totalTweets);
 
     res.status(200).json({
       message: "Successfully completed search",
@@ -860,6 +942,54 @@ _.post("/logout", async (req, res, next) => {
   }
 });
 
+_.post("/uploadProfileImage", requireAuth, async (req, res) => {
+  try {
+    if (!req.files || Object.keys(req.files).length === 0) {
+      return res.status(400).send("No files were uploaded.");
+    }
+    console.log(" Check if files are received", req.files); // Check if files are received
+
+    const profileImage = req.files.profileImage;
+    const userId = req.body.userId; // Assuming you send userId along with the file
+    if (userId !== req.user.id) {
+      return res.status(401).send("Unauthorised user.");
+    }
+    let oldProfilePic = await DB.oldProfilePic(userId);
+
+    if (oldProfilePic !== "default.jpg") {
+      const oldProfileImagePath = path.join(
+        __dirname,
+        "../images",
+        oldProfilePic
+      );
+      fs.unlink(oldProfileImagePath, (err) => {
+        if (err) {
+          console.error(`Failed to delete old profile image: ${err}`);
+        } else {
+          console.log("Successfully deleted old profile image");
+        }
+      });
+    }
+
+    let uploadingPic = await DB.uploadPic(userId, profileImage.name);
+
+    const uploadPath = path.join(__dirname, "../images", profileImage.name);
+    console.log(`Attempting to save to ${uploadPath}`); // Log the path to check
+    profileImage.mv(uploadPath, (err) => {
+      if (err) {
+        console.log(err); // Log the error
+        return res.status(500).send(err);
+      }
+    });
+
+    res.status(200).json({
+      message: "File uploaded and database updated successfully",
+      data: profileImage.name,
+    });
+  } catch (err) {
+    console.error(new Error(err.message));
+  }
+});
 //handlujemo sve metode na svim ostali putanjama koje nisu definisane ovde, kako bi neko preko puta mogao da dobije bolji odgovor
 _.all("*", async (req, res) => {
   try {

@@ -1,16 +1,15 @@
 <template>
   <header class="header">
     <p class="logo">
-      <a href="#">Twitter <font-awesome-icon icon="fa-brands fa-twitter" /></a>
+      <a href="#"><font-awesome-icon icon="fa-brands fa-twitter" /> Twitter</a>
     </p>
     <CornerProfile
-      :name="name"
-      :handle="handle"
+      :user="storedUser"
       v-if="loggedUser"
       @loggedOut="loggedOutHandler"
     />
     <div v-if="!loggedUser" class="signIn" @click="loginModalVisibility = true">
-      <p>LOG IN</p>
+      <p><font-awesome-icon :icon="['far', 'user']" /> LOG IN</p>
     </div>
   </header>
   <RegisterModal
@@ -84,7 +83,7 @@ export default {
           this.name = "";
           this.handle = "";
           this.$emit("loggedUserNavFalse");
-          this.$router.push("/explore");
+          this.$router.push("/");
         })
         .catch((err) => {
           console.error(err);
@@ -109,27 +108,15 @@ export default {
   box-sizing: border-box;
 }
 
-.button {
-  background-color: #b6bdc4;
-  padding: 0px 15px;
-  border-radius: 10px;
-  margin-right: 10px;
-}
-.button:hover {
-  background-color: #6287ad;
-}
-.button:hover,
-.signIn:hover {
-  color: #fff;
-  cursor: pointer;
-}
 .signIn {
-  background-color: rgb(231, 188, 108);
-
-  color: #34495e;
-  padding: 0px 15px;
+  background-color: #6287ad;
+  color: aliceblue;
+  padding: 10px 15px;
   border-radius: 10px;
   margin-right: 10px;
+}
+.signIn p {
+  margin: 0px;
 }
 ul {
   margin: 0;
@@ -146,10 +133,9 @@ a {
 }
 .logo {
   margin: 0;
-  font-size: 1.45em;
+  font-size: 1.3em;
 }
 .logo a {
-  padding: 10px 15px;
   text-transform: uppercase;
   text-align: center;
   display: block;
@@ -161,13 +147,9 @@ a.routher-link {
 }
 
 .header {
-  padding-top: 0.5em;
-  padding-bottom: 0.5em;
   border: 1px solid #a2a2a2;
   background-color: #f4f4f4;
-  -webkit-box-shadow: 0px 0px 14px 0px rgba(0, 0, 0, 0.75);
-  -moz-box-shadow: 0px 0px 14px 0px rgba(0, 0, 0, 0.75);
-  box-shadow: 0px 0px 14px 0px rgba(0, 0, 0, 0.75);
+  box-shadow: -1px 3px 12px -1px rgba(0, 0, 0, 0.299);
   -webkit-border-radius: 5px;
   -moz-border-radius: 5px;
   border-radius: 5px;
@@ -179,6 +161,6 @@ a.routher-link {
   left: 0;
   right: 0;
   z-index: 1000;
-  height: 100px;
+  height: 80px;
 }
 </style>

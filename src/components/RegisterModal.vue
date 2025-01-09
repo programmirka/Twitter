@@ -2,7 +2,7 @@
   <div class="modal" v-if="registerModalVisibility">
     <div class="register">
       <div class="registerTitle">
-        <button @click="closeModal">X</button>
+        <span class="close" @click="closeModal"> &times</span>
         <h1>Register</h1>
       </div>
       <form @submit.prevent="register">
@@ -34,12 +34,19 @@
           :error="errors.rePassword"
           required
         ></BaseInput>
-        <BaseInput
+        <!-- <BaseInput
           v-model="user.handle"
           label="Handle"
           type="text"
           :error="errors.handle"
-        ></BaseInput>
+        ></BaseInput> -->
+        <label :for="uuid" class="handle"
+          >Handle
+          <span class="error" v-if="errors.handle">{{ errors.handle }}</span>
+
+          <span class="pre-text">@</span>
+          <input id="uuid" v-model="user.handle" class="field" />
+        </label>
         <legend class="birthday">Birthday</legend>
         <div class="birthdaySelect">
           <BaseSelect
@@ -72,6 +79,7 @@
 <script>
 import axios from "axios";
 import Validation from "@/services/Validation.js";
+import UniqueID from "@/services/UniqueID.js";
 
 export default {
   props: {
@@ -168,6 +176,12 @@ export default {
       this.$emit("openLoginModal");
     },
   },
+  setup() {
+    const uuid = UniqueID().getID();
+    return {
+      uuid,
+    };
+  },
   watch: {
     "user.name"(newVal, oldVal) {
       console.log(`Count changed from ${oldVal} to ${newVal}`);
@@ -235,16 +249,19 @@ export default {
   margin-top: 10px;
   position: relative;
 }
-.registerTitle {
+/* .registerTitle {
   display: flex;
-}
+} */
 .registerTitle h1 {
   margin: 0px;
+  padding: 10px;
+  text-align: center;
+  color: #34495e;
 }
 .registerBtn {
   width: 500px;
 }
-.registerTitle button,
+
 .submit {
   background-color: #b6bdc4;
   padding: 15px 20px;
@@ -252,12 +269,12 @@ export default {
   font-size: 23px;
   border-radius: 10px;
 }
-.registerTitle button {
+/* .registerTitle button {
   position: absolute;
   top: 0px;
   left: 0;
   border-radius: 0px;
-}
+} */
 .submit:hover {
   background-color: #6287ad;
 }
@@ -265,10 +282,38 @@ export default {
   background-color: #397dc1;
 }
 
-.registerTitle button:hover {
+/* .registerTitle button:hover {
   background-color: #b5391678;
 }
 .registerTitle button:active {
   background-color: #b53916cd;
+} */
+.handle {
+  position: relative;
+}
+
+.pre-text {
+  position: absolute;
+  left: 10px;
+  top: 53px;
+  color: grey;
+  transform: translateY(-50%);
+  pointer-events: none;
+  font-size: larger;
+  z-index: 1;
+}
+.handle input {
+  padding-left: 26px;
+}
+.fieldHandle {
+  padding: 15px 10px 15px 10px;
+  margin: 8px 0 10px;
+  font-size: 1.1em;
+  width: 500px;
+}
+.error {
+  color: red;
+  font-size: 0.9em;
+  padding: 1px;
 }
 </style>

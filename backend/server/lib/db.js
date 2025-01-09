@@ -1,3 +1,4 @@
+const { reject } = require("lodash");
 const mysql = require("mysql");
 const { ErrorTypes } = require("vue-router");
 
@@ -18,21 +19,134 @@ let _ = class DB {
     multipleStatements: true,
   });
 
-  static getTweets() {
+  static getTweets(limit, offset) {
     return new Promise((resolve, reject) => {
+      console.log("U get Tweets u DB.js", limit, offset);
+      if (!limit || offset === "undefined") {
+        return reject(
+          new Error("limit or offset not provided in the getTweets in db.js")
+        );
+      }
       this.conn.query(
-        `SELECT tweet.*, user.usr_name, user.usr_handle,
+        `SELECT tweet.*, user.usr_name, user.usr_handle, user.usr_profilePic,
         (SELECT COUNT(DISTINCT like_tweet.usr_id) 
         FROM like_tweet 
-        WHERE like_tweet.twt_id = tweet.twt_id) AS twt_likes,
+        INNER JOIN user ON like_tweet.usr_id = user.usr_id
+        WHERE like_tweet.twt_id = tweet.twt_id AND user.usr_blocked = ?) AS twt_likes,
        (SELECT COUNT(*) 
         FROM comment 
-        WHERE comment.twt_id = tweet.twt_id AND comment.com_deleted = "0") AS twt_comments 
+		INNER JOIN user ON comment.usr_id = user.usr_id
+        WHERE comment.twt_id = tweet.twt_id AND comment.com_deleted = ? AND user.usr_blocked = ?) AS twt_comments 
         FROM twitter_baza.tweet
         INNER JOIN user ON user.usr_id = tweet.usr_id
         LEFT JOIN like_tweet ON like_tweet.twt_id = tweet.twt_id
         LEFT JOIN comment ON comment.twt_id = tweet.twt_id
-        WHERE tweet.twt_deleted = ?
+        WHERE tweet.twt_deleted = ? AND user.usr_blocked = ?
+        GROUP BY tweet.twt_id
+        ORDER BY tweet.twt_created DESC
+        LIMIT ? OFFSET ?`,
+        [0, 0, 0, 0, 0, limit, offset],
+        function (err, results, fields) {
+          if (err) {
+            return reject(err);
+          }
+          if (results && results.length > 0) {
+            resolve(results);
+          } else {
+            resolve(null); // Return null if user not found
+          }
+        }
+      );
+    });
+  }
+
+  static getHomeTweets(limit, offset, id) {
+    return new Promise((resolve, reject) => {
+      console.log("U get HomeTweets u DB.js", limit, offset);
+      if (!limit || !id || offset === "undefined") {
+        return reject(
+          new Error(
+            "limit, id or offset not provided in the getHomeTweets in db.js"
+          )
+        );
+      }
+      this.conn.query(
+        `SELECT tweet.*, user.usr_name, user.usr_handle, user.usr_profilePic,
+        (SELECT COUNT(DISTINCT like_tweet.usr_id) 
+        FROM like_tweet 
+        INNER JOIN user ON like_tweet.usr_id = user.usr_id
+        WHERE like_tweet.twt_id = tweet.twt_id AND user.usr_blocked = ?) AS twt_likes,
+       (SELECT COUNT(*) 
+        FROM comment 
+		    INNER JOIN user ON comment.usr_id = user.usr_id
+        WHERE comment.twt_id = tweet.twt_id AND comment.com_deleted = ? AND user.usr_blocked = ?) AS twt_comments 
+        FROM twitter_baza.tweet
+        INNER JOIN user ON user.usr_id = tweet.usr_id
+        LEFT JOIN like_tweet ON like_tweet.twt_id = tweet.twt_id
+        LEFT JOIN comment ON comment.twt_id = tweet.twt_id
+       LEFT JOIN follower ON (follower.flw_follower = tweet.usr_id OR follower.flw_followee = tweet.usr_id)
+        WHERE tweet.twt_deleted = ? AND user.usr_blocked = ? AND
+        (follower.flw_follower = ?
+        OR tweet.usr_id = ?)
+        
+        GROUP BY tweet.twt_id
+        ORDER BY tweet.twt_created DESC
+        LIMIT ? OFFSET ?`,
+        [0, 0, 0, 0, 0, id, id, limit, offset],
+        function (err, results, fields) {
+          if (err) {
+            return reject(err);
+          }
+          if (results && results.length > 0) {
+            resolve(results);
+          } else {
+            resolve(null); // Return null if user not found
+          }
+        }
+      );
+    });
+  }
+
+  static getTotalHomeTweets(id) {
+    return new Promise((resolve, reject) => {
+      if (!id) {
+        return reject(new Error("id not provided in getTotalHomeTweets"));
+      }
+      this.conn.query(
+        `SELECT tweet.*, user.usr_name, user.usr_handle
+        FROM twitter_baza.tweet
+        INNER JOIN user ON user.usr_id = tweet.usr_id
+        LEFT JOIN follower ON (follower.flw_follower = tweet.usr_id OR follower.flw_followee = tweet.usr_id)
+        WHERE tweet.twt_deleted = ?  AND user.usr_blocked = ? AND 
+        (follower.flw_follower = ?
+        OR tweet.usr_id = ?)
+        GROUP BY tweet.twt_id
+       `,
+        [0, 0, id, id],
+        function (err, results, fields) {
+          if (err) {
+            return reject(err);
+          }
+          if (results && results.length > 0) {
+            resolve(results.length);
+          } else {
+            resolve(null); // Return null if user not found
+          }
+        }
+      );
+    });
+  }
+
+  static getTotalTweets() {
+    return new Promise((resolve, reject) => {
+      this.conn.query(
+        `SELECT tweet.*, user.usr_name, user.usr_handle
+        
+        FROM twitter_baza.tweet
+        INNER JOIN user ON user.usr_id = tweet.usr_id
+        LEFT JOIN like_tweet ON like_tweet.twt_id = tweet.twt_id
+        LEFT JOIN comment ON comment.twt_id = tweet.twt_id
+        WHERE tweet.twt_deleted = ?  AND user.usr_blocked = ?
         GROUP BY tweet.twt_id
         ORDER BY tweet.twt_created DESC`,
         [0, 0],
@@ -41,7 +155,7 @@ let _ = class DB {
             return reject(err);
           }
           if (results && results.length > 0) {
-            resolve(results);
+            resolve(results.length);
           } else {
             resolve(null); // Return null if user not found
           }
@@ -59,18 +173,20 @@ let _ = class DB {
         `SELECT 
         tweet.*, 
         user.usr_name, 
-        user.usr_handle,
+        user.usr_handle, user.usr_profilePic,
         (SELECT COUNT(DISTINCT like_tweet.usr_id) 
-         FROM like_tweet 
-         WHERE like_tweet.twt_id = tweet.twt_id) AS twt_likes,
-        (SELECT COUNT(*) 
-         FROM comment 
-         WHERE comment.twt_id = tweet.twt_id AND comment.com_deleted = "0") AS twt_comments 
+        FROM like_tweet 
+        INNER JOIN user ON like_tweet.usr_id = user.usr_id
+        WHERE like_tweet.twt_id = tweet.twt_id AND user.usr_blocked = ?) AS twt_likes,
+       (SELECT COUNT(*) 
+        FROM comment 
+		    INNER JOIN user ON comment.usr_id = user.usr_id
+        WHERE comment.twt_id = tweet.twt_id AND comment.com_deleted = ? AND user.usr_blocked = ?) AS twt_comments 
         FROM twitter_baza.tweet
         INNER JOIN user ON user.usr_id = tweet.usr_id
         WHERE tweet.twt_id = ?
         GROUP BY tweet.twt_id;`,
-        [id],
+        [0, 0, 0, id],
         function (err, results, fields) {
           if (err) {
             return reject(err);
@@ -86,22 +202,25 @@ let _ = class DB {
     });
   }
 
-  static getProfileTweets(id) {
+  static getProfileTweets(id, limit, offset) {
     return new Promise((resolve, reject) => {
-      if (!id) {
-        return reject(new Error("Id not provided"));
+      if (!id || !limit || offset === "undefined") {
+        return reject(new Error("Id, limit or offset not provided"));
       }
       this.conn.query(
         `SELECT 
       tweet.*, 
       user.usr_name, 
       user.usr_handle,
+      user.usr_profilePic,
       (SELECT COUNT(DISTINCT like_tweet.usr_id) 
-         FROM like_tweet 
-         WHERE like_tweet.twt_id = tweet.twt_id) AS twt_likes,
-      (SELECT COUNT(*) 
-        FROM comment 
-        WHERE comment.twt_id = tweet.twt_id AND comment.com_deleted = "0") AS twt_comments 
+      FROM like_tweet 
+      INNER JOIN user ON like_tweet.usr_id = user.usr_id
+      WHERE like_tweet.twt_id = tweet.twt_id AND user.usr_blocked = ?) AS twt_likes,
+     (SELECT COUNT(*) 
+      FROM comment 
+      INNER JOIN user ON comment.usr_id = user.usr_id
+      WHERE comment.twt_id = tweet.twt_id AND comment.com_deleted = ? AND user.usr_blocked = ?) AS twt_comments 
       
       FROM twitter_baza.tweet 
   
@@ -111,11 +230,12 @@ let _ = class DB {
       LEFT JOIN like_tweet ON like_tweet.twt_id = tweet.twt_id
       LEFT JOIN comment ON comment.twt_id = tweet.twt_id
 
-      WHERE tweet.twt_deleted = "0"
+      WHERE tweet.twt_deleted = ?  AND user.usr_blocked = ?
   
       GROUP BY tweet.twt_id, user.usr_name, user.usr_handle
-      ORDER BY tweet.twt_created DESC;`,
-        [id],
+      ORDER BY tweet.twt_created DESC
+      LIMIT ? OFFSET ?;`,
+        [0, 0, 0, id, 0, 0, limit, offset],
         function (err, results, fields) {
           if (err) {
             return reject(err);
@@ -130,24 +250,60 @@ let _ = class DB {
     });
   }
 
+  static getTotalProfileTweets(id) {
+    return new Promise((resolve, reject) => {
+      if (!id) {
+        return reject(
+          new Error("id not provided in the getTotalProfileTweets")
+        );
+      }
+      this.conn.query(
+        `SELECT tweet.*, user.usr_name, user.usr_handle
+        FROM twitter_baza.tweet
+        INNER JOIN user ON user.usr_id = tweet.usr_id
+        AND user.usr_id = ?
+        LEFT JOIN like_tweet ON like_tweet.twt_id = tweet.twt_id
+        LEFT JOIN comment ON comment.twt_id = tweet.twt_id
+        WHERE tweet.twt_deleted = ?  AND user.usr_blocked = ?
+        GROUP BY tweet.twt_id
+        ORDER BY tweet.twt_created DESC`,
+        [id, 0, 0],
+        function (err, results, fields) {
+          if (err) {
+            return reject(err);
+          }
+          if (results && results.length > 0) {
+            resolve(results.length);
+          } else {
+            resolve(null); // Return null if user not found
+          }
+        }
+      );
+    });
+  }
+
   static getComments(id) {
     return new Promise((resolve, reject) => {
       if (!id) {
         return reject(new Error("Id not provided"));
       }
       this.conn.query(
-        `SELECT comment.com_id, user.usr_name, user.usr_handle, 
+        `SELECT comment.com_id, user.usr_name, user.usr_handle, user.usr_profilePic,
         comment.usr_id, comment.twt_id, comment.com_content, comment.com_created, 
         comment.com_deleted, 
-        COUNT(like_comment.usr_id) as likes_number 
+        ( SELECT COUNT(DISTINCT like_comment.usr_id)
+        FROM twitter_baza.like_comment
+        INNER JOIN user ON like_comment.usr_id = user.usr_id
+        WHERE like_comment.com_id = comment.com_id AND user.usr_blocked = ?
+        ) AS likes_number 
         FROM twitter_baza.comment 
         LEFT JOIN twitter_baza.like_comment ON (twitter_baza.like_comment.com_id = comment.com_id) 
         LEFT JOIN twitter_baza.user ON ( user.usr_id = comment.usr_id) 
-        WHERE comment.twt_id = ? AND comment.com_deleted = ?
+        WHERE comment.twt_id = ? AND comment.com_deleted = ? AND user.usr_blocked = ?
         GROUP BY comment.com_id 
         ORDER BY comment.com_created 
-        DESC`,
-        [id, 0], //TODO: moxda mora broj
+        ASC`,
+        [0, id, 0, 0], //TODO: moxda mora broj
         function (err, results, fields) {
           if (err) {
             return reject(err);
@@ -297,7 +453,7 @@ let _ = class DB {
       }
       this.conn.query(
         `UPDATE comment SET com_content = ?,
-       com_created = now() WHERE comment.com_id = ?`,
+       com_edited= now() WHERE comment.com_id = ?`,
         [com_content, com_id],
         function (err, results, fields) {
           if (err) {
@@ -465,7 +621,7 @@ let _ = class DB {
         );
       }
       this.conn.query(
-        `UPDATE tweet SET tweet.twt_content = ?, twt_created = now() WHERE twt_id = ?`,
+        `UPDATE tweet SET tweet.twt_content = ?, twt_edited = now() WHERE twt_id = ?`,
         [twt_content, twt_id],
         function (error, results, fields) {
           if (error) {
@@ -496,6 +652,8 @@ let _ = class DB {
         usr_birth, 
         usr_email,
         usr_pass,
+        usr_profilePic,
+        usr_admin, usr_blocked,
         (SELECT COUNT(DISTINCT flw_follower) FROM follower WHERE flw_followee = user.usr_id) AS followers,
         (SELECT COUNT(DISTINCT flw_followee) FROM follower WHERE flw_follower = user.usr_id) AS following 
         FROM twitter_baza.user
@@ -921,7 +1079,8 @@ let _ = class DB {
       }
       this.conn.query(
         `SELECT tag.tag_id FROM twitter_baza.tag
-        WHERE tag.tag_name LIKE ?`,
+        WHERE tag.tag_name LIKE ?
+       `,
         ["%" + tag + "%"],
         function (err, results, fileds) {
           if (err) {
@@ -1011,7 +1170,7 @@ let _ = class DB {
         return reject(new Error("name not provided in the getAllUsersWhrName"));
       }
       this.conn.query(
-        `SELECT usr_name, usr_id, usr_handle, 
+        `SELECT usr_name, usr_id, usr_handle,  user.usr_profilePic,
         usr_email, usr_joined, usr_blocked, usr_admin 
         FROM twitter_baza.user WHERE user.usr_name LIKE ? `,
         [name + "%"],
@@ -1037,7 +1196,7 @@ let _ = class DB {
         );
       }
       this.conn.query(
-        `SELECT usr_name, usr_id, usr_handle, 
+        `SELECT usr_name, usr_id, usr_handle,  user.usr_profilePic,
         usr_email, usr_joined, usr_blocked, usr_admin 
         FROM twitter_baza.user WHERE user.usr_handle LIKE ? `,
         [handle + "%"],
@@ -1064,7 +1223,7 @@ let _ = class DB {
         );
       }
       this.conn.query(
-        `SELECT usr_name, usr_id, usr_handle, 
+        `SELECT usr_name, usr_id, usr_handle,  user.usr_profilePic,
         usr_email, usr_joined, usr_blocked, usr_admin 
         FROM twitter_baza.user WHERE user.usr_email = ? `,
         [email],
@@ -1085,7 +1244,7 @@ let _ = class DB {
   static getAllUsersWhoBlocked() {
     return new Promise((resolve, reject) => {
       this.conn.query(
-        `SELECT usr_name, usr_id, usr_handle, 
+        `SELECT usr_name, usr_id, usr_handle,  user.usr_profilePic,
         usr_email, usr_joined, usr_blocked, usr_admin 
         FROM twitter_baza.user WHERE user.usr_blocked = ? `,
         [1],
@@ -1107,7 +1266,7 @@ let _ = class DB {
   static getAllUsersWhoAdmin() {
     return new Promise((resolve, reject) => {
       this.conn.query(
-        `SELECT usr_name, usr_id, usr_handle, 
+        `SELECT usr_name, usr_id, usr_handle,  user.usr_profilePic,
         usr_email, usr_joined, usr_blocked, usr_admin 
         FROM twitter_baza.user WHERE user.usr_admin = ? `,
         [1],
@@ -1207,7 +1366,7 @@ let _ = class DB {
     });
   }
 
-  static tweetsByTagIds(tagIdsArray) {
+  static tweetsByTagIds(tagIdsArray, limit, offset) {
     return new Promise((resolve, reject) => {
       if (!tagIdsArray) {
         return reject(
@@ -1219,12 +1378,15 @@ let _ = class DB {
         tweet.*, 
         user.usr_name, 
         user.usr_handle,
+        user.usr_profilePic,
         (SELECT COUNT(DISTINCT like_tweet.usr_id) 
-           FROM like_tweet 
-           WHERE like_tweet.twt_id = tweet.twt_id) AS twt_likes,
-        (SELECT COUNT(*) 
-          FROM comment 
-          WHERE comment.twt_id = tweet.twt_id AND comment.com_deleted = "0") AS twt_comments 
+        FROM like_tweet 
+        INNER JOIN user ON like_tweet.usr_id = user.usr_id
+        WHERE like_tweet.twt_id = tweet.twt_id AND user.usr_blocked = ?) AS twt_likes,
+       (SELECT COUNT(*) 
+        FROM comment 
+		    INNER JOIN user ON comment.usr_id = user.usr_id
+        WHERE comment.twt_id = tweet.twt_id AND comment.com_deleted = ? AND user.usr_blocked = ?) AS twt_comments 
         
         FROM twitter_baza.tweet 
     
@@ -1234,11 +1396,101 @@ let _ = class DB {
         LEFT JOIN comment ON comment.twt_id = tweet.twt_id
         LEFT JOIN tweet_tag ON tweet_tag.twt_id = tweet.twt_id
   
-        WHERE tweet.twt_deleted = "0" AND tweet_tag.tag_id IN (?)
+        WHERE tweet.twt_deleted = ? AND tweet_tag.tag_id IN (?) AND user.usr_blocked = ?
     
         GROUP BY tweet.twt_id, user.usr_name, user.usr_handle
-        ORDER BY tweet.twt_created DESC;`,
-        [tagIdsArray],
+        ORDER BY tweet.twt_created DESC
+        LIMIT ? OFFSET ?`,
+        [0, 0, 0, 0, tagIdsArray, 0, limit, offset],
+        function (err, results, fileds) {
+          if (err) {
+            resolve(err);
+          }
+          if (results && results.length > 0) {
+            resolve(results);
+          } else {
+            resolve(null);
+          }
+        }
+      );
+    });
+  }
+  static getTotalTweetsByTagIds(tagIdsArray) {
+    return new Promise((resolve, reject) => {
+      if (!tagIdsArray) {
+        return reject(
+          new Error("tagIdsArray is not provided in the getTotalTweetsByTagIds")
+        );
+      }
+      this.conn.query(
+        `SELECT 
+        tweet.*, 
+        user.usr_name, 
+        user.usr_handle
+        
+        FROM twitter_baza.tweet 
+    
+        INNER JOIN user ON user.usr_id = tweet.usr_id
+            
+        LEFT JOIN like_tweet ON like_tweet.twt_id = tweet.twt_id
+        LEFT JOIN comment ON comment.twt_id = tweet.twt_id
+        LEFT JOIN tweet_tag ON tweet_tag.twt_id = tweet.twt_id
+  
+        WHERE tweet.twt_deleted = ? AND tweet_tag.tag_id IN (?) AND user.usr_blocked = ?
+    
+        GROUP BY tweet.twt_id, user.usr_name, user.usr_handle
+        `,
+        [0, tagIdsArray, 0],
+        function (err, results, fileds) {
+          if (err) {
+            resolve(err);
+          }
+          if (results && results.length > 0) {
+            resolve(results.length);
+          } else {
+            resolve(null);
+          }
+        }
+      );
+    });
+  }
+
+  static tweetsByHandle(handle, limit, offset) {
+    return new Promise((resolve, reject) => {
+      if (!handle) {
+        return reject(
+          new Error("handle is not provided in the searchHandleByName")
+        );
+      }
+      this.conn.query(
+        `SELECT 
+        tweet.*, 
+        user.usr_name, 
+        user.usr_handle,
+        user.usr_profilePic,
+        (SELECT COUNT(DISTINCT like_tweet.usr_id) 
+        FROM like_tweet 
+        INNER JOIN user ON like_tweet.usr_id = user.usr_id
+        WHERE like_tweet.twt_id = tweet.twt_id AND user.usr_blocked = ?) AS twt_likes,
+       (SELECT COUNT(*) 
+        FROM comment 
+		    INNER JOIN user ON comment.usr_id = user.usr_id
+        WHERE comment.twt_id = tweet.twt_id AND comment.com_deleted = ? AND user.usr_blocked = ?) AS twt_comments 
+        
+        FROM twitter_baza.tweet 
+    
+        INNER JOIN user ON user.usr_id = tweet.usr_id
+        AND user.usr_handle LIKE ?
+            
+        LEFT JOIN like_tweet ON like_tweet.twt_id = tweet.twt_id
+        LEFT JOIN comment ON comment.twt_id = tweet.twt_id
+  
+        WHERE tweet.twt_deleted = ?  AND user.usr_blocked = ?
+    
+        GROUP BY tweet.twt_id, user.usr_name, user.usr_handle
+        ORDER BY tweet.twt_created DESC
+        LIMIT ? OFFSET ?`,
+        [0, 0, 0, handle + "%", 0, 0, limit, offset],
         function (err, results, fileds) {
           if (err) {
             resolve(err);
@@ -1253,44 +1505,37 @@ let _ = class DB {
     });
   }
 
-  static tweetsByHandle(handle) {
+  static getTotalTweetsByHandle(handle) {
     return new Promise((resolve, reject) => {
       if (!handle) {
         return reject(
-          new Error("handle is not provided in the searchHandleByName")
+          new Error("handle is not provided in the getTotalTweetsByHandle")
         );
       }
       this.conn.query(
         `SELECT 
         tweet.*, 
         user.usr_name, 
-        user.usr_handle,
-        (SELECT COUNT(DISTINCT like_tweet.usr_id) 
-           FROM like_tweet 
-           WHERE like_tweet.twt_id = tweet.twt_id) AS twt_likes,
-        (SELECT COUNT(*) 
-          FROM comment 
-          WHERE comment.twt_id = tweet.twt_id AND comment.com_deleted = "0") AS twt_comments 
-        
+        user.usr_handle  
         FROM twitter_baza.tweet 
-    
+  
         INNER JOIN user ON user.usr_id = tweet.usr_id
         AND user.usr_handle LIKE ?
             
         LEFT JOIN like_tweet ON like_tweet.twt_id = tweet.twt_id
         LEFT JOIN comment ON comment.twt_id = tweet.twt_id
   
-        WHERE tweet.twt_deleted = "0" 
+        WHERE tweet.twt_deleted = ?  AND user.usr_blocked = ?
     
         GROUP BY tweet.twt_id, user.usr_name, user.usr_handle
-        ORDER BY tweet.twt_created DESC;`,
-        [handle + "%"],
+      `,
+        [handle + "%", 0, 0],
         function (err, results, fileds) {
           if (err) {
             resolve(err);
           }
           if (results && results.length > 0) {
-            resolve(results);
+            resolve(results.length);
           } else {
             resolve(null);
           }
@@ -1298,7 +1543,48 @@ let _ = class DB {
       );
     });
   }
-  static tweetsByTweetContentString(term) {
+
+  static getTotalTweetsByString(term) {
+    return new Promise((resolve, reject) => {
+      if (!term) {
+        return reject(
+          new Error("term is not provided in the searchTweetContent")
+        );
+      }
+      this.conn.query(
+        `SELECT 
+        tweet.*, 
+        user.usr_name, 
+        user.usr_handle
+        
+        
+        FROM twitter_baza.tweet 
+    
+        INNER JOIN user ON user.usr_id = tweet.usr_id
+            
+        LEFT JOIN like_tweet ON like_tweet.twt_id = tweet.twt_id
+        LEFT JOIN comment ON comment.twt_id = tweet.twt_id
+  
+        WHERE tweet.twt_deleted = ?  AND user.usr_blocked = ? AND twt_content LIKE ?
+    
+        GROUP BY tweet.twt_id, user.usr_name, user.usr_handle
+      `,
+        [0, 0, "%" + term + "%"],
+        function (err, results, fileds) {
+          if (err) {
+            resolve(err);
+          }
+          if (results && results.length > 0) {
+            resolve(results.length);
+          } else {
+            resolve(null);
+          }
+        }
+      );
+    });
+  }
+
+  static tweetsByTweetContentString(term, limit, offset) {
     return new Promise((resolve, reject) => {
       if (!term) {
         return reject(
@@ -1310,12 +1596,15 @@ let _ = class DB {
         tweet.*, 
         user.usr_name, 
         user.usr_handle,
+        user.usr_profilePic,
         (SELECT COUNT(DISTINCT like_tweet.usr_id) 
-           FROM like_tweet 
-           WHERE like_tweet.twt_id = tweet.twt_id) AS twt_likes,
-        (SELECT COUNT(*) 
-          FROM comment 
-          WHERE comment.twt_id = tweet.twt_id AND comment.com_deleted = "0") AS twt_comments 
+        FROM like_tweet 
+        INNER JOIN user ON like_tweet.usr_id = user.usr_id
+        WHERE like_tweet.twt_id = tweet.twt_id AND user.usr_blocked = ?) AS twt_likes,
+       (SELECT COUNT(*) 
+        FROM comment 
+		    INNER JOIN user ON comment.usr_id = user.usr_id
+        WHERE comment.twt_id = tweet.twt_id AND comment.com_deleted = ? AND user.usr_blocked = ?) AS twt_comments 
         
         FROM twitter_baza.tweet 
     
@@ -1324,11 +1613,12 @@ let _ = class DB {
         LEFT JOIN like_tweet ON like_tweet.twt_id = tweet.twt_id
         LEFT JOIN comment ON comment.twt_id = tweet.twt_id
   
-        WHERE tweet.twt_deleted = "0" AND twt_content LIKE ?
+        WHERE tweet.twt_deleted = ?  AND user.usr_blocked = ? AND twt_content LIKE ?
     
         GROUP BY tweet.twt_id, user.usr_name, user.usr_handle
-        ORDER BY tweet.twt_created DESC;`,
-        ["%" + term + "%"],
+        ORDER BY tweet.twt_created DESC
+        LIMIT ? OFFSET ?`,
+        [0, 0, 0, 0, 0, "%" + term + "%", limit, offset],
         function (err, results, fileds) {
           if (err) {
             resolve(err);
@@ -1373,12 +1663,14 @@ let _ = class DB {
   static getFollowThreeUsers() {
     return new Promise((resolve, reject) => {
       this.conn.query(
-        `SELECT usr_id, usr_name, usr_handle, COUNT(follower.flw_follower) AS followers_number 
+        `SELECT usr_id, usr_name, usr_handle, usr_profilePic, COUNT(follower.flw_follower) AS followers_number 
       FROM twitter_baza.user
       LEFT JOIN follower ON (user.usr_id = follower.flw_followee)
+      WHERE user.usr_blocked = ?
       GROUP BY user.usr_id
       ORDER BY followers_number DESC
       LIMIT 3`,
+        [0],
         function (error, results, fileds) {
           if (error) {
             return reject(error);
@@ -1397,14 +1689,14 @@ let _ = class DB {
   static followeeListForAuth(id) {
     return new Promise((resolve, reject) => {
       this.conn.query(
-        `SELECT usr_id, usr_name, usr_handle, COUNT(follower.flw_follower) AS followers_number 
+        `SELECT usr_id, usr_name, usr_handle, usr_profilePic, COUNT(follower.flw_follower) AS followers_number 
         FROM twitter_baza.user
         LEFT JOIN follower ON (user.usr_id = follower.flw_followee)
-        WHERE user.usr_id != ?
+        WHERE user.usr_id != ? AND user.usr_blocked = ?
         GROUP BY user.usr_id
         ORDER BY followers_number DESC
         LIMIT 500`,
-        [id],
+        [id, 0],
         function (error, results, fileds) {
           if (error) {
             return reject(error);
@@ -1422,18 +1714,70 @@ let _ = class DB {
   static getTags() {
     return new Promise((resolve, reject) => {
       this.conn.query(
-        `SELECT tag.tag_id, tag.tag_name, COUNT(tweet_tag.twt_id) AS tweets_number 
-        FROM twitter_baza.tag
-        LEFT JOIN tweet_tag ON (tag.tag_id = tweet_tag.tag_id)
+        `SELECT tag.tag_id, tag.tag_name, 
+        COUNT(tweet_tag.twt_id) AS tweets_number 
+        FROM twitter_baza.tweet
+        LEFT JOIN tweet_tag ON (tweet.twt_id = tweet_tag.twt_id)
+        LEFT JOIN tag ON (tweet_tag.tag_id = tag.tag_id)
+        LEFT JOIN user ON (tweet.usr_id = user.usr_id)
+        WHERE tweet.twt_deleted = ? AND user.usr_blocked = ?
         GROUP BY tag.tag_id
         ORDER BY tweets_number DESC
-        LIMIT 3`,
+	
+        LIMIT 3
+        `,
+        [0, 0],
         function (error, results, fileds) {
           if (error) {
             return reject(error);
           }
           if (results && results.length > 0) {
             resolve(results);
+          } else {
+            resolve(null);
+          }
+        }
+      );
+    });
+  }
+  static uploadPic(id, pic) {
+    return new Promise((resolve, reject) => {
+      if (!id || !pic) {
+        return reject(new Error("id or pic is not provided in the uploadPic"));
+      }
+      this.conn.query(
+        `UPDATE user SET user.usr_profilePic = ? WHERE user.usr_id = ?`,
+        [pic, id],
+        function (error, results, fileds) {
+          if (error) {
+            return reject(error);
+          }
+          if (results && results.length > 0) {
+            console.log("results u upload Pic", results);
+            resolve(results);
+          } else {
+            resolve(null);
+          }
+        }
+      );
+    });
+  }
+
+  static oldProfilePic(id) {
+    return new Promise((resolve, reject) => {
+      if (!id) {
+        return reject(new Error("id is not provided in the oldProfilePic"));
+      }
+      this.conn.query(
+        `SELECT user.usr_profilePic FROM user WHERE user.usr_id = ?`,
+        [id],
+        function (error, results, fileds) {
+          if (error) {
+            return reject(error);
+          }
+          if (results && results.length > 0) {
+            console.log("results u upload Pic", results[0].usr_profilePic);
+            resolve(results[0].usr_profilePic);
           } else {
             resolve(null);
           }

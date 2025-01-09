@@ -11,7 +11,8 @@ class Comment {
     com_created,
     com_deleted,
     likes_number,
-    com_liked
+    com_liked,
+    usr_profilePic
   ) {
     this.com_id = com_id;
     this.usr_name = usr_name;
@@ -23,6 +24,7 @@ class Comment {
     this.com_deleted = com_deleted;
     this.likes_number = likes_number;
     this.com_liked = com_liked;
+    this.usr_profilePic = usr_profilePic;
   }
 }
 

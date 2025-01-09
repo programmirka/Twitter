@@ -14,25 +14,25 @@ function password(password) {
   if (re.test(password)) {
     return "";
   } else {
-    return "Password must be between 8-30 characters long and must contain at least one letter, one number and one special character ";
+    return "must contain at least one letter, one number and one special character and must be 8-30 characters long";
   }
 }
 function name(name) {
   const re = /^[a-zA-Z0-9-' ]+$/;
   //only contains letters, numbers, spaces, hyphens, and apostrophes,
-  if (re.test(name) && name.length > 3 && name.length < 30) {
+  if (re.test(name) && name.length > 1 && name.length <= 30) {
     return "";
   } else {
-    return "Name should only contain letters, numbers, spaces, hyphens, and apostrophes";
+    return `can contain a-z, A-Z, 0-9, " ", ' and must be 2-30 characters long`;
   }
 }
 function handle(handle) {
-  const re = /^[a-zA-Z0-9-' ]+$/;
+  const re = /^[a-zA-Z0-9-_']{2,15}$/;
   //only contains letters, numbers, spaces, hyphens, and apostrophes,
-  if (re.test(handle) && handle.length > 3 && handle.length < 15) {
+  if (re.test(handle) && handle.length > 1 && handle.length <= 15) {
     return "";
   } else {
-    return "Handle can contain only letters, numbers, spaces, hyphens, and apostrophes and must be between 8-30 characters";
+    return `can contain a-z, A-Z, 0-9,', "-", "_" and must be 2-15 characters long`;
   }
 }
 

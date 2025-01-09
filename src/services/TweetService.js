@@ -11,7 +11,8 @@ class Tweet {
     usr_handle,
     twt_likes,
     twt_comments,
-    twt_liked
+    twt_liked,
+    usr_profilePic
   ) {
     this.twt_id = twt_id;
     this.usr_id = usr_id;
@@ -23,6 +24,7 @@ class Tweet {
     this.twt_likes = twt_likes;
     this.twt_comments = twt_comments;
     this.twt_liked = twt_liked;
+    this.usr_profilePic = usr_profilePic;
   }
 }
 
@@ -42,7 +44,8 @@ function getTweetsSuccess(res) {
           niz[i].usr_handle,
           niz[i].twt_likes,
           niz[i].twt_comments,
-          niz[i].twt_liked
+          niz[i].twt_liked,
+          niz[i].usr_profilePic
         )
       );
     }
@@ -52,9 +55,16 @@ function getTweetsSuccess(res) {
 
 export default {
   Tweet,
-  getTweets(id) {
-    //explore & home & profile
-    return axios.get("http://localhost:3000/tweets/" + id);
+  getTweets(perPage, page, id) {
+    //explore & profile
+    return axios.get(
+      `http://localhost:3000/tweets/${id}?_limit=${perPage}&_page=${page}`
+    );
+  },
+  getTweetsHome(perPage, page) {
+    return axios.get(
+      `http://localhost:3000/api/tweets/home/?_limit=${perPage}&_page=${page}`
+    );
   },
   getTweet(id) {
     //tweetView

@@ -1,20 +1,23 @@
 <template>
   <nav class="main-nav">
-    <RouterLink to="/" v-if="loggedUserNav">Home</RouterLink>
-    <RouterLink to="/explore">Explore</RouterLink>
+    <RouterLink :to="{ name: 'home' }" v-if="loggedUserNav">
+      <font-awesome-icon :icon="['fas', 'home']" /> Home</RouterLink
+    >
+    <RouterLink :to="{ name: 'explore' }"
+      ><font-awesome-icon :icon="['far', 'compass']" /> Explore</RouterLink
+    >
     <RouterLink
       :to="{ name: 'profile-details', params: { id: id } }"
       v-if="loggedUserNav && id"
-      >Profile</RouterLink
-    >
-    <RouterLink
-      :to="{ name: 'search', params: { tag: id } }"
-      v-if="loggedUserNav"
-    >
+      ><font-awesome-icon :icon="['far', 'user']" /> Profile
+    </RouterLink>
+    <RouterLink :to="{ name: 'search' }" v-if="loggedUserNav">
       <font-awesome-icon :icon="['fas', 'magnifying-glass']" />
       Search</RouterLink
     >
-    <RouterLink to="/admin" v-if="loggedUserNav && userAdmin">Admin</RouterLink>
+    <RouterLink to="/admin" v-if="loggedUserNav && userAdmin">
+      <font-awesome-icon :icon="['fas', 'gear']" /> Admin</RouterLink
+    >
   </nav>
 </template>
 <script>

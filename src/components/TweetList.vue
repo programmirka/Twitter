@@ -12,10 +12,12 @@
       :usr_id="tweet.usr_id"
       :likes="tweet.twt_likes"
       :liked="tweet.twt_liked"
+      :profileImagePath="tweet.usr_profilePic"
       @likeTweet="likeTweet"
       @dislikeTweet="dislikeTweet"
       @deleteTweet="deleteTweet"
       @editTweet="editTweet"
+      @plsLoginModal="plsLoginModal"
     ></Tweet>
   </div>
 </template>
@@ -29,6 +31,7 @@ export default {
   props: {
     tweets: Array,
   },
+
   methods: {
     likeTweet(twt_id) {
       this.$emit("likeTweet", twt_id);
@@ -48,6 +51,9 @@ export default {
           console.error(err);
         });
     },
+    plsLoginModal() {
+      this.$emit("plsLoginModal");
+    },
     //api request za sortiranje, ali kad se klikne dugme, zatim pri refreshu bude opet isto kao iz mounted
     //ne znam jos gde ce ti biti da li ovde ili uparentu
   },
@@ -57,4 +63,4 @@ export default {
 //    // The current route is "/home"
 // }
 </script>
-<style scoped></style>
+<style></style>

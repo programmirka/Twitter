@@ -49,6 +49,15 @@ function admin() {
     return;
   }
 }
+function adminId() {
+  if (getUser()) {
+    if (admin()) {
+      return id();
+    }
+  } else {
+    return;
+  }
+}
 
 //localStorage only supports string key-value pairs.
 //This means that if you want to store objects, arrays, or any non-string data,
@@ -60,4 +69,5 @@ export default {
   removeUser,
   id,
   admin,
+  adminId,
 };
