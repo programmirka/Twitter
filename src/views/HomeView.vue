@@ -13,12 +13,14 @@ export default {
       tweets: [],
       totalTweets: 0,
       profileImagePath: "",
-      authUser_id: LocalStorage.id(),
+      authUser_id: null,
     };
   },
   props: ["page"],
-  mounted() {
+  async mounted() {
+    this.authUser_id = await LocalStorage.id();
     this.getTweets();
+    console.log(this.authUser_id);
     ProfileService.getUser(this.authUser_id)
       .then((res) => {
         this.profileImagePath = res.data.data.usr_profilePic;

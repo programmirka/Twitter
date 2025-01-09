@@ -63,7 +63,7 @@ export default {
       alert("Sign in successful!");
       this.$emit("close");
       this.$router.push("/home"); //kad se uloguje ide na svoj home page
-
+      console.log(res.data.user);
       LocalStorage.setUser(res.data.user);
       this.$emit("loggedIn", LocalStorage.getUser());
     },
@@ -73,6 +73,9 @@ export default {
       if (error) {
         if (error.response && error.response.status === 401) {
           alert("Username or password is incorrect");
+        }
+        if (error.response && error.response.status === 403) {
+          alert("User is blocked! Please contact support!");
         }
       }
     },
@@ -136,10 +139,12 @@ export default {
 .register {
   width: 640px;
   min-height: 570px;
-  background-color: aliceblue;
+  background-color: #fff;
   padding: 8px 70px;
   margin-top: 50px;
   position: relative;
+  border-radius: 15px;
+  box-shadow: -3px 5px 12px -1px rgba(0, 0, 0, 0.559);
 }
 /* .registerTitle {
   display: flex;

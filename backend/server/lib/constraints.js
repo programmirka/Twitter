@@ -1,7 +1,10 @@
 let _ = {};
 
 _.name = () => {
-  const regex = "^[-'A-Za-z0-9 ]{2,30}$"; //we allow: - (hyphen), ' (apostrophe) capital letter, small letters, numbers and whitespace
+  const regex = "^[-'A-Za-z0-9 ]{2,30}$";
+  //we allow: - (hyphen), ' (apostrophe) capital letter, small
+  //letters, numbers and whitespace
+  //to add latin ČčĆćĐđŠšŽž
   const constraints = {
     presence: {
       allowEmpty: false,
@@ -56,7 +59,7 @@ _.about = () => {
 };
 
 _.handle = () => {
-  const regex = "^[A-Za-z0-9_-']{2,15}$";
+  const regex = /^[A-Za-z0-9_'-]{2,15}$/;
 
   const constraints = {
     presence: {

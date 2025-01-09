@@ -31,13 +31,13 @@
           label="About"
           type="text"
           :error="errors.about"
+          :dp__theme_light="true"
         >
         </BaseTextarea>
         <legend class="formLabel">Birthday</legend>
         <VueDatePicker
-          v-model="date"
+          v-model="user.birthday"
           :enable-time-picker="false"
-          :dp__theme_light="false"
           class="fieldBirthday"
         ></VueDatePicker>
 
@@ -91,15 +91,7 @@ export default {
         birthday: "",
         password: "",
         rePassword: "",
-        birth: {
-          month: "",
-          day: "",
-          year: "",
-        },
       },
-      month: Array.from({ length: 12 }, (_, i) => i + 1),
-      day: Array.from({ length: 31 }, (_, i) => i + 1),
-      year: Array.from({ length: 100 }, (_, i) => new Date().getFullYear() - i),
       errors: {
         name: "",
         password: "",
@@ -107,9 +99,9 @@ export default {
         handle: "",
         about: "",
       },
-      birthday: "",
       authUser_id: LocalStorage.id(),
-      date: null,
+      oldBirthday: null,
+      oldHandle: String,
     };
   },
   methods: {
@@ -127,21 +119,45 @@ export default {
       ) {
         return alert("Please finish your form");
       }
-      this.user.birthday =
-        this.user.birth.year +
-        "-" +
-        this.user.birth.month +
-        "-" +
-        this.user.birth.day;
+
+      console.log("stari rodj", this.oldBirthday);
+      console.log("novi rodj", this.user.birthday);
+
+      if (this.oldBirthday !== this.user.birthday) {
+        let year = this.user.birthday.getFullYear();
+        let month = this.user.birthday.getMonth() + 1;
+        let day = this.user.birthday.getDate();
+        this.user.birthday = year + "-" + month + "-" + day;
+      } else {
+        let parts = this.user.birthday.split("/");
+        this.user.birthday = parts[2] + "-" + parts[0] + "-" + parts[1];
+      }
 
       EditProfileService.editProfile(this.id, this.user)
         .then((res) => {
           alert("Change is successfully submitted!");
           console.log(res.data);
+
           this.$emit("editProfileSuccess"); //posle upisi u profile view, da se sakrije modal
+          if (this.oldHandle != this.user.handle) {
+            this.emitter.emit("handle", {
+              eventContent: this.user.handle,
+            });
+          }
+          this.loadEditProfile();
         })
         .catch((error) => {
-          console.error(error);
+          if (
+            error.response.status === 400 &&
+            error.response.data.error.type === "handle"
+          ) {
+            // console.log(error.response.data.error.type);
+            console.log(error.response.status);
+            // console.log(error.response.headers);
+            alert(
+              "Oops! There is already user with that handle, try a new one!"
+            );
+          }
         });
     },
     loadEditProfile() {
@@ -149,28 +165,19 @@ export default {
         EditProfileService.openEditProfile(this.id)
           .then((res) => {
             let userDB = res.data.data;
-            console.log("user DB", userDB);
             this.user.name = userDB.usr_name;
             this.user.email = userDB.usr_email;
             this.user.handle = userDB.usr_handle;
             this.user.about = userDB.usr_about;
-            this.user.birth.day = parseInt(
-              CreatedService.day(userDB.usr_birth)
-            );
-            this.user.birth.month = parseInt(
-              CreatedService.month(userDB.usr_birth)
-            );
-            this.user.birth.year = CreatedService.year(userDB.usr_birth);
+            this.oldBirthday =
+              parseInt(CreatedService.month(userDB.usr_birth)) +
+              "/" +
+              parseInt(CreatedService.day(userDB.usr_birth)) +
+              "/" +
+              CreatedService.year(userDB.usr_birth);
 
-            console.log(userDB.usr_birth);
-            console.log(
-              "day",
-              this.user.birth.day,
-              "month",
-              this.user.birth.month,
-              "year",
-              this.user.birth.year
-            );
+            this.user.birthday = this.oldBirthday;
+            this.oldHandle = this.user.handle;
           })
           .catch((err) => {
             console.error(err);
@@ -188,31 +195,6 @@ export default {
   mounted() {
     this.loadEditProfile();
   },
-  //     editProfileRequestSuccess(res) {},
-  //     editProfileRequestError(error) {
-  //       if (error) {
-  //       }
-  //     },
-  //   },
-  //   editProfile(e) {
-  //     axios
-  //       .post("http://localhost:3000/api/editProfile", {
-  //         name: this.user.name,
-  //         email: this.user.email,
-  //         password: this.user.password,
-  //         rePassword: this.user.rePassword,
-  //         handle: this.user.handle,
-  //         birth: birthday,
-  //       })
-  //       .then((res) => {
-  //         editProfileRequestSuccess(res);
-  //       })
-  //       .catch((error) => {
-  //         editProfileRequestError(error);
-  //       });
-  //   },
-
-  // axios.post("http://localhost:3000/test");
   watch: {
     "user.name"(newVal, oldVal) {
       console.log(`Count changed from ${oldVal} to ${newVal}`);
@@ -255,14 +237,16 @@ export default {
   },
 };
 </script>
-<style scoped>
+<style>
 .passLabel {
   margin: 0px;
+  font-size: 1.1em;
+  border-top: grey 0.5px solid;
+  padding-top: 20px;
 }
 .editProfile {
   width: 650px;
   min-height: 880px;
-  background-color: aliceblue;
   background-color: #fff;
   padding: 8px 70px;
   margin-top: 15px;
@@ -284,7 +268,7 @@ export default {
   border: none;
   font-size: 23px;
   border-radius: 10px;
-  margin: 0px 0 15px;
+  margin: -15px 0 15px;
   width: 500px;
 }
 .submit:hover {
@@ -295,45 +279,52 @@ export default {
 }
 
 .error {
-  color: red;
-  font-size: 0.9em;
+  font-family: "Montserrat", sans-serif;
+  color: rgb(160, 92, 92);
+  font-size: 0.8em;
+  font-weight: 200;
   padding: 1px;
 }
 .handle {
   position: relative;
 }
 .fieldHandle {
+  font-family: "Montserrat", sans-serif;
   padding: 15px 15px 15px 26px;
   margin: 2px 0 13px;
-  font-size: 1.1em;
+  font-size: 1em;
+  font-weight: 200;
   width: 500px;
   border-radius: 10px;
-  border: 0.5px grey solid;
-  background-color: rgb(242, 242, 242);
+  border: 0.5px rgba(128, 128, 128, 0.444) solid;
+  background-color: rgba(242, 242, 242, 0.706);
+  box-shadow: 0px 3px 10px -1px rgba(0, 0, 0, 0.233);
 }
 
 .fieldBirthday {
   margin: 2px 0 13px;
-  font-size: 1.1em;
+  font-size: 1em;
+  font-weight: 200;
   width: 500px;
   border-radius: 10px;
-  border: 0.5px grey solid;
-  color: rgb(242, 242, 242);
-  background-color: purple;
+  border: 0.5px rgba(128, 128, 128, 0.444) solid;
+  background-color: rgba(242, 242, 242, 0.706);
+  box-shadow: 0px 3px 10px -1px rgba(0, 0, 0, 0.233);
 }
 
 .formLabel {
-  font-size: 1.2em;
+  font-size: 1.1em;
+  font-weight: 400;
 }
 
 .pre-text {
   position: absolute;
-  left: 10px;
-  top: 52px;
+  left: 11px;
+  top: 51px;
   color: grey;
   transform: translateY(-50%);
   pointer-events: none;
-  font-size: larger;
+  font-size: 1em;
   z-index: 1;
 }
 </style>

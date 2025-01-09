@@ -152,6 +152,7 @@ export default {
   display: flex;
   align-items: start;
   justify-content: space-between;
+
   padding: 5px 0px 10px;
   position: relative;
 }

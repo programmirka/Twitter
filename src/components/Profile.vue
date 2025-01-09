@@ -65,6 +65,9 @@
         ><span
           ><b>{{ user.followers }}</b> Followers</span
         >
+        <span
+          ><b>{{ karma }}</b> Karma</span
+        >
       </div>
     </div>
   </div>
@@ -86,6 +89,7 @@ export default {
     user: Object,
     id: [Number, String],
     profileImagePath: String,
+    karma: [Number, String],
   },
   methods: {
     edit() {
@@ -191,6 +195,7 @@ export default {
 }
 .about {
   width: 800px;
+  white-space: pre-line;
 }
 .joined {
   margin-top: 15px;

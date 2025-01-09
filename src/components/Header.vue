@@ -101,6 +101,12 @@ export default {
       this.handle = this.storedUser.usr_handle;
     }
   },
+  watch: {
+    storedUser(newVal, oldVal) {
+      console.log("new Pic", newVal);
+      console.log("old Pic", oldVal);
+    },
+  },
 };
 </script>
 <style scooped>

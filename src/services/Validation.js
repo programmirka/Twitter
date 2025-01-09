@@ -27,9 +27,10 @@ function name(name) {
   }
 }
 function handle(handle) {
-  const re = /^[a-zA-Z0-9-_']{2,15}$/;
+  const re = /^[a-zA-Z0-9_'\-]{2,15}$/;
+
   //only contains letters, numbers, spaces, hyphens, and apostrophes,
-  if (re.test(handle) && handle.length > 1 && handle.length <= 15) {
+  if (re.test(handle)) {
     return "";
   } else {
     return `can contain a-z, A-Z, 0-9,', "-", "_" and must be 2-15 characters long`;
@@ -43,7 +44,7 @@ function about(about) {
   if (re.test(about) && about.length < 300) {
     return "";
   } else {
-    return "About can't contain special characters and must be below 300 characters";
+    return "can't contain special characters and must be below 300 characters";
   }
 }
 function rePassword(password, rePassword) {

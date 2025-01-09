@@ -1,11 +1,16 @@
 const { reject } = require("lodash");
 const mysql = require("mysql");
+// Učitava MySQL biblioteku, za konekciju sa MySQL bazom podataka.
 const { ErrorTypes } = require("vue-router");
 
-// conn.connect((err)=>{
-//     if(err) throw err;
-//     console.log("DB Connected!")
-// })  u index.js
+// U programiranju, statičke funkcije unutar objekta (ili klase)
+// su funkcije koje pripadaju samom objektu ili klasi, a ne instancama
+// te klase. To znači da statičke funkcije mogu biti pozvane direktno
+// sa imenom klase, ne mogu se pozvati preko instanci klase.
+
+// Ovo je posebno korisno kada želite funkcionalnost koja
+// ne zavisi od stanja pojedinačne instance, ali je logično povezana
+// sa klasom.
 
 let _ = class DB {
   // static localStorage = [];
@@ -35,7 +40,7 @@ let _ = class DB {
         WHERE like_tweet.twt_id = tweet.twt_id AND user.usr_blocked = ?) AS twt_likes,
        (SELECT COUNT(*) 
         FROM comment 
-		INNER JOIN user ON comment.usr_id = user.usr_id
+		    INNER JOIN user ON comment.usr_id = user.usr_id
         WHERE comment.twt_id = tweet.twt_id AND comment.com_deleted = ? AND user.usr_blocked = ?) AS twt_comments 
         FROM twitter_baza.tweet
         INNER JOIN user ON user.usr_id = tweet.usr_id
@@ -725,7 +730,7 @@ let _ = class DB {
       }
 
       this.conn.query(
-        `SELECT * FROM twitter_baza.user WHERE usr_email = ?`,
+        `SELECT usr_about, usr_admin, usr_birth, usr_blocked, usr_email, usr_handle, usr_id, usr_joined, usr_name, usr_profilePic FROM twitter_baza.user WHERE usr_email = ?`,
         [email],
         function (err, results, fields) {
           if (err) {
@@ -741,6 +746,85 @@ let _ = class DB {
       );
     });
   }
+
+  static findByHandle(handle) {
+    return new Promise((resolve, reject) => {
+      if (!handle) {
+        return reject(new Error("handle not provided"));
+      }
+
+      this.conn.query(
+        `SELECT usr_about, usr_admin, usr_birth, usr_blocked, usr_email, usr_handle, usr_id, usr_joined, usr_name, usr_profilePic FROM twitter_baza.user WHERE usr_handle = ?`,
+        [handle],
+        function (err, results, fields) {
+          if (err) {
+            return reject(err);
+          }
+
+          if (results && results.length > 0) {
+            resolve(results[0]);
+          } else {
+            resolve(null); // Return null if user not found
+          }
+        }
+      );
+    });
+  }
+
+  static getUserKarma(id) {
+    return new Promise((resolve, reject) => {
+      if (!id) {
+        return reject(new Error("id not provided"));
+      }
+      console.log("id jeeee", id);
+      this.conn.query(
+        `SELECT COUNT(like_tweet.usr_id) as total_likes
+        FROM twitter_baza.tweet 
+        INNER JOIN user ON (tweet.usr_id = user.usr_id)
+        LEFT JOIN like_tweet ON (like_tweet.twt_id = tweet.twt_id)
+        WHERE tweet.usr_id = ? AND tweet.twt_deleted = "0"
+        `,
+        [id],
+        function (err, results, fields) {
+          if (err) {
+            return reject(err);
+          }
+          if (results && results.length > 0) {
+            console.log("broj karmaaaaaaaaaaaa", results);
+            resolve(results[0]);
+          } else {
+            resolve(null); // Return null if user not found
+          }
+        }
+      );
+    });
+  }
+
+  static returnPassViaEmail(email) {
+    return new Promise((resolve, reject) => {
+      if (!email) {
+        return reject(
+          new Error("email is not provided in the returnPassViaEmail.")
+        );
+      }
+      this.conn.query(
+        "SELECT usr_pass FROM twitter_baza.user WHERE usr_email = ?",
+        [email],
+        function (err, results, fields) {
+          if (err) {
+            return reject(err);
+          }
+
+          if (results && results.length > 0) {
+            resolve(results[0]);
+          } else {
+            resolve(null); // Return null if user not found
+          }
+        }
+      );
+    });
+  }
+
   static updateUserName(name, id) {
     return new Promise((resolve, reject) => {
       if (!name || !id) {

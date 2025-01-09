@@ -117,7 +117,7 @@ export default {
   computed: {
     hasNextPage() {
       // First, calculate total pages
-      var totalPages = Math.ceil(this.totalTweets / 5); // 2 is events per page
+      var totalPages = Math.ceil(this.totalTweets / 5); //5 is tweets per page
 
       // Then check to see if the current page is less than the total pages.
       return this.page < totalPages;

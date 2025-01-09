@@ -1,5 +1,6 @@
 import { createRouter, createWebHistory } from "vue-router";
 import HomeView from "../views/HomeView.vue";
+import Explore from "@/views/ExploreView.vue";
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -14,7 +15,7 @@ const router = createRouter({
       path: "/",
       name: "explore",
       props: (route) => ({ page: parseInt(route.query.page) || 1 }),
-      component: () => import("../views/ExploreView.vue"),
+      component: Explore,
     },
 
     {

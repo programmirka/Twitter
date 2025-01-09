@@ -1,14 +1,14 @@
-const express = require("express");
-const User = require("../models/user");
-const passport = require("passport");
-const DB = require("./db");
-const bcrypt = require("bcrypt");
-const path = require("path");
-const fs = require("fs");
+const express = require("express"); // glavni framework za izgradnju web aplikacije u node.js okruzenju.
+const User = require("../models/user"); //model user, koji koristim za izmene na user-u iz baze
+const passport = require("passport"); //Ovo je middleware za upravljanje autentifikacijom korisnika. Passport se može integrisati sa različitim strategijama, a ja sam koristila lokalnu -  korisničko ime i lozinka
+const DB = require("./db"); //prilagođeni modul za povezivanje sa bazom podataka i operacijama nad njom
+const bcrypt = require("bcrypt"); //  Biblioteka za heširanje i sigurno čuvanje osetljivih informacija, najčešće lozinki.
+const path = require("path"); // path - za rad sa putanjama fajlova i direktorijuma.
+const fs = require("fs"); //fs (File System) - za rad sa fajl-sistemom.
 
 const { async } = require("validate.js");
 
-let _ = express.Router();
+let _ = express.Router(); //  kreira novu instancu Express rutera i smešta je u promenljivu po imenu _. Ova promenljiva može zatim biti koristićena za definisanje različitih ruta.
 
 const requireAuth = (req, res, next) => {
   if (req.isAuthenticated()) {
@@ -21,7 +21,6 @@ const requireAuth = (req, res, next) => {
     });
   }
 };
-
 //kako ne bismo pisali kod za proveru autentifikacije za svaki pojedinacno slucaj,
 //pisemo ga izdvojeno i pozivamo za request-ove za koje je ona potrebna
 
@@ -79,7 +78,17 @@ _.post("/register", async (req, res) => {
     }
 
     user.setBirth(birth);
-    user.setHandle(handle);
+
+    let handleCheck = await DB.findByHandle(handle);
+    msg = user.setHandle(handle);
+    if (msg || handleCheck)
+      return res.status(400).json({
+        error: {
+          code: 400,
+          type: "handle",
+          message: msg,
+        },
+      });
 
     user.save();
 
@@ -107,12 +116,20 @@ _.post("/login", (req, res, next) => {
       console.log(`3. Passport authenticate cb ${JSON.stringify(user)} `);
 
       if (err) {
-        //(e.g., database connection error, server error)
-        return res.status(401).json({
-          timestamp: Date.now(),
-          msg: "Access denied. Username or password is incorrect",
-          code: 401, //unauthorized access
-        });
+        if (err === "User is blocked") {
+          return res.status(403).json({
+            timestamp: Date.now(),
+            msg: "Access denied. User is blocked!",
+            code: 403, //unauthorized access
+          });
+        } else {
+          //(e.g., database connection error, server error)
+          return res.status(401).json({
+            timestamp: Date.now(),
+            msg: "Access denied. Username or password is incorrect",
+            code: 401, //unauthorized access
+          });
+        }
       }
       if (!user) {
         //(e.g., incorrect username or password),
@@ -259,6 +276,15 @@ _.put("/profile/:id", requireAuth, async (req, res) => {
     }
 
     if (userOld.usr_handle !== handle) {
+      if (await DB.findByHandle(handle)) {
+        return res.status(400).json({
+          error: {
+            code: 400,
+            type: "handle",
+            message: msg,
+          },
+        });
+      }
       msg = userNew.setHandle(handle);
       if (msg) {
         return res.status(400).json({

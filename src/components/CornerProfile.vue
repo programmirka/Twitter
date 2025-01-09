@@ -1,13 +1,9 @@
 <template>
   <div class="mainCorner">
     <div class="corner" @click="openLogoutMenu">
-      <img
-        :src="
-          'http://localhost:5173/backend/server/images/' + user.usr_profilePic
-        "
-      />
+      <img :src="imagePath" />
       <p>
-        @{{ user.usr_handle }}
+        @{{ userHandle }}
         <span> <font-awesome-icon :icon="['fas', 'chevron-down']" /></span>
       </p>
     </div>
@@ -15,6 +11,9 @@
   </div>
 </template>
 <script>
+import { watchEffect } from "vue";
+
+watchEffect;
 export default {
   props: {
     user: Object,
@@ -22,6 +21,8 @@ export default {
   data() {
     return {
       corner: false,
+      image: null,
+      handle: null,
     };
   },
   methods: {
@@ -30,6 +31,60 @@ export default {
     },
     logOutBtn() {
       this.$emit("loggedOut");
+    },
+  },
+  created() {
+    // this.userHandle = this.user.usr_handle;
+    // this.imagePath = this.usr_profilePic;
+  },
+  created() {
+    this.emitter.on("profilePic", (evt) => {
+      console.log(this.image);
+      this.image = evt.eventContent;
+    });
+
+    this.emitter.on("handle", (evt) => {
+      console.log(evt);
+      console.log(this.handle);
+      this.handle = evt.eventContent;
+    });
+  },
+  computed: {
+    imagePath() {
+      this.emitter.on("profilePic", (evt) => {
+        console.log(this.image);
+        this.image = evt.eventContent;
+      });
+      if (this.image === undefined) {
+        console.log("Izvrsava se");
+        return (
+          "http://localhost:5173/backend/server/images/" +
+          this.user.usr_profilePic
+        );
+      } else if (this.image !== null) {
+        console.log(this.image);
+        return "http://localhost:5173/backend/server/images/" + this.image;
+      } else {
+        console.log(this.user.usr_profilePic);
+        console.log(this.image);
+
+        return (
+          "http://localhost:5173/backend/server/images/" +
+          this.user.usr_profilePic
+        );
+      }
+    },
+    userHandle() {
+      this.emitter.on("handle", (evt) => {
+        console.log(evt);
+        console.log(this.handle);
+        this.handle = evt.eventContent;
+      });
+      if (this.handle) {
+        return this.handle;
+      } else {
+        return this.user.usr_handle;
+      }
     },
   },
 };
@@ -61,18 +116,27 @@ export default {
   align-items: center;
   height: 50%;
 }
+.corner:hover {
+  cursor: pointer;
+}
+
 .corner img {
   border-radius: 50%;
   height: 50px;
   margin-right: 5px;
 }
 .corner p {
-  font-size: 1.25em;
+  font-size: 1.1em;
   color: rgba(105, 105, 105, 0.843);
   margin: 0px;
 }
 .corner span {
   color: black;
+  font-size: 1.3em;
+}
+
+.corner:hover {
+  cursor: pointer;
 }
 .logOut {
   border: 1px solid;

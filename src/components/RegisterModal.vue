@@ -41,14 +41,22 @@
           :error="errors.handle"
         ></BaseInput> -->
         <label :for="uuid" class="handle"
-          >Handle
+          ><span class="formLabel">Handle</span>
           <span class="error" v-if="errors.handle">{{ errors.handle }}</span>
 
           <span class="pre-text">@</span>
-          <input id="uuid" v-model="user.handle" class="field" />
+          <input id="uuid" v-model="user.handle" class="fieldHandle" />
         </label>
         <legend class="birthday">Birthday</legend>
-        <div class="birthdaySelect">
+        <VueDatePicker
+          v-model="user.birthday"
+          :enable-time-picker="false"
+          class="fieldBirthday"
+          required
+        ></VueDatePicker>
+
+        <br />
+        <!-- <div class="birthdaySelect">
           <BaseSelect
             :options="month"
             v-model="user.birth.month"
@@ -68,7 +76,7 @@
             label="Year"
             required
           ></BaseSelect>
-        </div>
+        </div> -->
         <br />
 
         <button class="submit registerBtn" type="submit">Register</button>
@@ -80,6 +88,8 @@
 import axios from "axios";
 import Validation from "@/services/Validation.js";
 import UniqueID from "@/services/UniqueID.js";
+import VueDatePicker from "@vuepic/vue-datepicker";
+import "@vuepic/vue-datepicker/dist/main.css";
 
 export default {
   props: {
@@ -90,18 +100,12 @@ export default {
       user: {
         name: "",
         email: "",
+        birthday: "",
         password: "",
         rePassword: "",
         handle: "",
-        birth: {
-          month: "",
-          day: "",
-          year: "",
-        },
       },
-      month: Array.from({ length: 12 }, (_, i) => i + 1),
-      day: Array.from({ length: 31 }, (_, i) => i + 1),
-      year: Array.from({ length: 100 }, (_, i) => new Date().getFullYear() - i),
+
       errors: {
         name: "",
         email: "",
@@ -113,8 +117,6 @@ export default {
   },
   methods: {
     registerRequestSuccess(res) {
-      console.log("status: ", res.status);
-      console.log(res);
       if (res.status === 200) {
         alert(
           "Registration successful!Success! Your account has been created. You can now log in and start using our services"
@@ -132,16 +134,27 @@ export default {
           console.log(error.response.status);
           // console.log(error.response.headers);
           alert("Oops! There were some problems with your submission.");
+        } else if (
+          error.response.status === 400 &&
+          error.response.data.error.type === "handle"
+        ) {
+          // console.log(error.response.data.error.type);
+          console.log(error.response.status);
+          // console.log(error.response.headers);
+          alert("Oops! There is already user with that handle, try a new one!");
         }
       }
     },
     register(e) {
-      let birthday =
-        this.user.birth.year +
-        "-" +
-        this.user.birth.month +
-        "-" +
-        this.user.birth.day;
+      console.log(this.user.birthday);
+      // if (this.user.birthday === "") {
+      //   return alert("Please finish your form by adding birthday!");
+      // }
+      let year = this.user.birthday.getFullYear();
+      let month = this.user.birthday.getMonth() + 1;
+      let day = this.user.birthday.getDate();
+      this.user.birthday = year + "-" + month + "-" + day;
+      console.log(this.user.birthday);
 
       if (
         this.errors.name ||
@@ -159,7 +172,7 @@ export default {
           password: this.user.password,
           rePassword: this.user.rePassword,
           handle: this.user.handle,
-          birth: birthday,
+          birth: this.user.birthday,
         })
         .then((res) => {
           this.registerRequestSuccess(res);
@@ -233,7 +246,6 @@ export default {
   top: 0px;
   left: 0px;
   width: 100%;
-
   background-color: rgba(0, 0, 0, 0.5);
   display: flex;
   justify-content: center;
@@ -244,10 +256,12 @@ export default {
 .register {
   width: 650px;
   height: 850px;
-  background-color: aliceblue;
+  background-color: #fff;
   padding: 8px 70px;
   margin-top: 10px;
   position: relative;
+  border-radius: 15px;
+  box-shadow: -3px 5px 12px -1px rgba(0, 0, 0, 0.559);
 }
 /* .registerTitle {
   display: flex;
@@ -291,29 +305,48 @@ export default {
 .handle {
   position: relative;
 }
+.fieldHandle {
+  font-family: "Montserrat", sans-serif;
+  padding: 15px 15px 15px 26px;
+  margin: 2px 0 13px;
+  font-size: 1em;
+  font-weight: 200;
+  width: 500px;
+  border-radius: 10px;
+  border: 0.5px rgba(128, 128, 128, 0.444) solid;
+  background-color: rgba(242, 242, 242, 0.706);
+}
+
+.fieldBirthday {
+  margin: 2px 0 13px;
+  font-size: 1em;
+  font-weight: 200;
+  width: 500px;
+  border-radius: 10px;
+  border: 0.5px rgba(128, 128, 128, 0.444) solid;
+  background-color: rgba(242, 242, 242, 0.706);
+}
+
+.formLabel {
+  font-size: 1.1em;
+  font-weight: 400;
+}
 
 .pre-text {
   position: absolute;
-  left: 10px;
-  top: 53px;
+  left: 11px;
+  top: 51px;
   color: grey;
   transform: translateY(-50%);
   pointer-events: none;
-  font-size: larger;
+  font-size: 1em;
   z-index: 1;
 }
-.handle input {
-  padding-left: 26px;
-}
-.fieldHandle {
-  padding: 15px 10px 15px 10px;
-  margin: 8px 0 10px;
-  font-size: 1.1em;
-  width: 500px;
-}
 .error {
-  color: red;
-  font-size: 0.9em;
+  font-family: "Montserrat", sans-serif;
+  color: rgb(160, 92, 92);
+  font-size: 0.8em;
+  font-weight: 200;
   padding: 1px;
 }
 </style>

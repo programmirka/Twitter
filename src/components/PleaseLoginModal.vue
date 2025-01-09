@@ -33,10 +33,12 @@ export default {
 .plsLogin {
   width: 400px;
   min-height: 100px;
-  background-color: aliceblue;
   padding: 17px 70px;
   margin-top: 150px;
   position: relative;
+  background-color: #fff;
+  border-radius: 15px;
+  box-shadow: -3px 5px 12px -1px rgba(0, 0, 0, 0.559);
 }
 /* .close {
   color: #aaa;

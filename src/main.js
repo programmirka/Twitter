@@ -6,53 +6,25 @@ import { camelCase } from "lodash";
 import axios from "axios";
 import VueDatePicker from "@vuepic/vue-datepicker";
 import "@vuepic/vue-datepicker/dist/main.css";
-
-/* import the fontawesome core */
-import { library } from "@fortawesome/fontawesome-svg-core";
+import mitt from "mitt";
+import Icons from "@/services/Icons.js";
 
 /* import font awesome icon component */
 import { FontAwesomeIcon } from "@fortawesome/vue-fontawesome";
 
-/* import specific icons */
-import { faUserSecret } from "@fortawesome/free-solid-svg-icons";
-import { faTwitter } from "@fortawesome/free-brands-svg-icons";
-import { faComment } from "@fortawesome/free-regular-svg-icons";
-import { faThumbsUp } from "@fortawesome/free-regular-svg-icons";
-import { faArrowAltCircleLeft } from "@fortawesome/free-regular-svg-icons";
-import { faCalendar } from "@fortawesome/free-regular-svg-icons";
-import { faMagnifyingGlass } from "@fortawesome/free-solid-svg-icons";
-import { faUser } from "@fortawesome/free-regular-svg-icons";
-import { faCompass } from "@fortawesome/free-regular-svg-icons";
-import { faHome } from "@fortawesome/free-solid-svg-icons";
-import { faGear } from "@fortawesome/free-solid-svg-icons";
-import { faArrowRightLong } from "@fortawesome/free-solid-svg-icons";
-import { faArrowLeftLong } from "@fortawesome/free-solid-svg-icons";
-import { faArrowDownLong } from "@fortawesome/free-solid-svg-icons";
-import { faChevronDown } from "@fortawesome/free-solid-svg-icons";
-
-/* add icons to the library */
-library.add(
-  faUserSecret,
-  faTwitter,
-  faComment,
-  faThumbsUp,
-  faArrowAltCircleLeft,
-  faCalendar,
-  faMagnifyingGlass,
-  faUser,
-  faCompass,
-  faHome,
-  faGear,
-  faArrowRightLong,
-  faArrowLeftLong,
-  faArrowDownLong,
-  faChevronDown
-);
-
 axios.defaults.withCredentials = true;
+/*If a user is authenticated, their credentials are typically stored in
+ cookies. With withCredentials set to true, those cookies will be sent 
+ with every request to the API, keeping the user authenticated during 
+ each interaction with the server. */
+
+const emitter = mitt();
 
 const app = createApp(App);
 
+app.config.globalProperties.emitter = emitter;
+
+//creating Base components global
 const requireComponent = import.meta.globEager(
   "./components/Base/Base[A-Z]*.(vue|js)"
 );

@@ -3,6 +3,7 @@
     :user="user"
     :id="authUser_id"
     :profileImagePath="profileImagePath"
+    :karma="karma"
     @openEditProfile="editProfileModVis = true"
     @follow="follow"
     @plsLoginModal="plsLoginModal = true"
@@ -70,6 +71,7 @@ import AdminServices from "../services/AdminServices";
 import ProfileService from "../services/ProfileService";
 import LocalStorage from "../services/LocalStorage";
 import FollowService from "../services/FollowService";
+import KarmaService from "../services/KarmaService";
 import NewTweet from "@/components/newTweet.vue";
 import UpdateProfilePic from "@/components/UpdateProfilePic.vue";
 import PleaseLoginModal from "../components/PleaseLoginModal.vue";
@@ -97,6 +99,7 @@ export default {
       openProfilePicModal: false,
       uploaded: false,
       profileImagePath: "",
+      karma: 0,
     };
   },
   props: {
@@ -131,27 +134,40 @@ export default {
         this.uploaded = true;
       }
     },
-    uploadProfilePic() {
+    async uploadProfilePic() {
       try {
         const formData = new FormData();
         formData.append("profileImage", this.selectedFile);
         formData.append("userId", this.user.usr_id);
-
-        const response = axios.post(
-          "http://localhost:3000/api/uploadProfileImage",
-          formData,
-          {
+        console.log(formData);
+        await axios
+          .post("http://localhost:3000/api/uploadProfileImage", formData, {
             headers: {
               "Content-Type": "multipart/form-data",
             },
-          }
-        );
-        if (response.data && response.data.path) {
-          this.profileImagePath = response.data.path;
-        }
+          })
+          .then((response) => {
+            console.log(response.data);
+            if (response.data.data) {
+              this.profileImagePath = response.data.data;
+              console.log(1);
+            }
+          })
+          .catch((err) => {
+            console.error("An error occurred:", err);
+          });
+
         this.openProfilePicModal = false;
+        console.log(2);
         this.getUser();
         this.getTweets();
+        console.log(3);
+        this.emitter.emit("profilePic", {
+          eventContent: this.profileImagePath,
+        });
+        console.log(this.profileImagePath);
+
+        // window.location.reload();
       } catch (error) {
         console.error("Error uploading file:", error);
       }
@@ -180,6 +196,9 @@ export default {
           console.log(this.user);
           this.user.isFollowing = res.data.isFollowing;
           this.profileImagePath = this.user.usr_profilePic;
+          // this.emitter.emit("profilePic", {
+          //   eventContent: this.profileImagePath,
+          // });
 
           if (res.data.isAuthenticated) {
             if (res.data.isFollowing) {
@@ -196,6 +215,15 @@ export default {
         })
         .catch((e) => {
           console.error("An error occurred:", e);
+        });
+
+      KarmaService.getKarma(this.id)
+        .then((res) => {
+          console;
+          this.karma = res.data.data.total_likes;
+        })
+        .catch((err) => {
+          console.error(err);
         });
     },
     follow() {

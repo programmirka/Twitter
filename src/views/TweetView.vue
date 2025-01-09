@@ -42,7 +42,7 @@
       <button class="replyBtn" @click="comment">Reply</button>
     </div>
 
-    <div>
+    <div class="commentsDiv">
       <Comments
         v-for="comment in comments"
         :key="comment.com_id"

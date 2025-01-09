@@ -175,6 +175,7 @@ export default {
   width: 100%;
   z-index: 2;
   margin: -15px -15px;
+  padding-left: 14px;
 }
 .mainAdmin h1 {
   font-size: 1.5em;

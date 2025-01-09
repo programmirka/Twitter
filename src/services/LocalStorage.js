@@ -8,6 +8,7 @@ function setUser(res) {
 function getUser() {
   try {
     let storedUser = localStorage.getItem("loggedInUser");
+
     return JSON.parse(storedUser);
   } catch (e) {
     console.log(e);

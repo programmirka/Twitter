@@ -219,6 +219,9 @@ export default {
 .tweetContent {
   margin-left: 63px;
 }
+.tweetContent a:first-child:hover {
+  color: #6287ad;
+}
 .profilePicTwt img {
   width: 55px;
   position: absolute;
